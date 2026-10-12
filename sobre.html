@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>Sobre o MobiliTudo</title>
     <link rel="stylesheet" href="style.css">
     <style>
@@ -81,6 +82,34 @@
                     <p>Focado inicialmente na região da Baixada Santista, cobrindo pontos como o Litoral Plaza e Terminais.</p>
                 </div>
             </div>
+
+            <h2>Como funciona</h2>
+            <p>
+                Mapas convencionais respondem <em>qual é o caminho mais curto</em>. Para quem usa cadeira de rodas,
+                essa é a pergunta errada: o caminho mais curto pode ter um degrau, uma calçada de 80&nbsp;cm ou uma
+                travessia sem guia rebaixada — e qualquer um dos três o torna inútil.
+            </p>
+            <p>
+                O MobiliTudo responde outra pergunta: <span class="highlight">qual é o caminho que eu consigo
+                percorrer</span>. Cada trecho de calçada mapeado guarda largura, inclinação, tipo de piso, presença
+                de piso tátil e de rebaixamento de guia. A partir do perfil de mobilidade escolhido, o sistema
+                descarta o que é intransponível e pondera o que apenas exige mais esforço, traçando uma rota que
+                costuma ser mais longa em metros e mais curta em barreiras.
+            </p>
+            <p>
+                As barreiras vêm da comunidade: qualquer pessoa reporta um obstáculo pelo mapa, e o relato só passa
+                a desviar trajetos depois de conferido — um relato não validado não pode bloquear o caminho de
+                outra pessoa.
+            </p>
+
+            <h2>Tecnologia</h2>
+            <p>
+                Mapa em <strong>Leaflet</strong> sobre dados do OpenStreetMap, API em <strong>Java</strong> com
+                <strong>Spring Boot</strong> em arquitetura hexagonal, e banco <strong>PostgreSQL</strong> com a
+                extensão espacial <strong>PostGIS</strong>, que armazena as geometrias e responde às consultas por
+                proximidade. O cálculo de rota usa o algoritmo A* sobre a malha viária, com função de custo baseada
+                nos parâmetros da ABNT NBR 9050.
+            </p>
 
             <h2>Por que criamos isso?</h2>
             <p>

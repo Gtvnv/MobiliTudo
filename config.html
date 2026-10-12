@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>Configurações - MobiliTudo</title>
     <link rel="stylesheet" href="style.css">
     <style>
         body { background: #f8f9fa; color: #333; overflow-y: auto; }
         .config-container { max-width: 600px; margin: 40px auto; padding: 20px; }
-        
+
         .config-card {
             background: white; border-radius: 15px; padding: 25px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px;
@@ -25,9 +26,20 @@
             padding: 12px 0; border-bottom: 1px solid #f9f9f9;
         }
 
+        .config-row .rotulo { display: flex; flex-direction: column; gap: 3px; padding-right: 15px; }
+        .config-row .rotulo small { color: #888; font-size: 12px; line-height: 1.4; }
+
+        .config-campo { display: block; padding: 12px 0; }
+        .config-campo label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 14px; }
+        .config-campo small { display: block; color: #888; font-size: 12px; line-height: 1.5; margin-bottom: 8px; }
+        .config-campo input, .config-campo select {
+            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;
+            font-size: 14px; box-sizing: border-box;
+        }
+
         /* Switch (Botão de deslizar) */
         .switch {
-            position: relative; display: inline-block; width: 50px; height: 26px;
+            position: relative; display: inline-block; width: 50px; height: 26px; flex-shrink: 0;
         }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
@@ -44,16 +56,19 @@
         .btn-save {
             background: #0056b3; color: white; border: none; padding: 15px;
             width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s;
+            margin-top: 10px;
         }
         .btn-save:hover { background: #003d80; }
         .back-link { display: block; text-align: center; margin-top: 15px; color: #666; text-decoration: none; }
+        .nota { font-size: 13px; color: #7a4a00; background: #fff4e0; padding: 12px; border-radius: 8px; line-height: 1.5; }
+        .nota code { background: rgba(0,0,0,0.07); padding: 1px 5px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
     <div class="config-container">
         <div class="config-header">
-            <a href="index.html" style="text-decoration: none; font-size: 24px;">⬅️</a>
+            <a href="index.html" style="text-decoration: none; font-size: 24px;" aria-label="Voltar ao mapa">⬅️</a>
             <h1>Configurações</h1>
         </div>
 
@@ -61,66 +76,129 @@
             <div class="config-section">
                 <h3>♿ Acessibilidade</h3>
                 <div class="config-row">
-                    <span>Leitor de tela automático</span>
+                    <span class="rotulo">Leitor de tela automático</span>
                     <label class="switch">
-                        <input type="checkbox" id="prefVisual">
+                        <input type="checkbox" id="prefVisual" aria-label="Leitor de tela automático">
                         <span class="slider"></span>
                     </label>
                 </div>
                 <div class="config-row">
-                    <span>Alto Contraste</span>
+                    <span class="rotulo">Alto contraste</span>
                     <label class="switch">
-                        <input type="checkbox" id="prefContraste">
+                        <input type="checkbox" id="prefContraste" aria-label="Alto contraste">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="config-row">
+                    <span class="rotulo">Fonte legível ampliada</span>
+                    <label class="switch">
+                        <input type="checkbox" id="prefFonte" aria-label="Fonte legível ampliada">
                         <span class="slider"></span>
                     </label>
                 </div>
             </div>
 
             <div class="config-section">
-                <h3>🗺️ Preferências do Mapa</h3>
-                <div class="config-row">
-                    <span>Exibir nomes das ruas</span>
-                    <label class="switch">
-                        <input type="checkbox" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="config-row">
-                    <span>Localização em tempo real</span>
-                    <label class="switch">
-                        <input type="checkbox" checked>
-                        <span class="slider"></span>
-                    </label>
+                <h3>🧭 Perfil de mobilidade</h3>
+                <div class="config-campo">
+                    <label for="prefPerfil">Como você se desloca</label>
+                    <small>Define quais barreiras bloqueiam a sua rota e como os locais são classificados.</small>
+                    <select id="prefPerfil">
+                        <option value="CADEIRA_DE_RODAS">Cadeira de rodas</option>
+                        <option value="MOBILIDADE_REDUZIDA">Mobilidade reduzida</option>
+                        <option value="DEFICIENCIA_VISUAL">Deficiência visual</option>
+                        <option value="PADRAO">Sem restrições</option>
+                    </select>
                 </div>
             </div>
 
-            <button class="btn-save" onclick="salvarConfig()">Salvar Alterações</button>
+            <div class="config-section">
+                <h3>🗺️ Mapa</h3>
+                <div class="config-campo">
+                    <label for="prefProvedor">Provedor das imagens do mapa</label>
+                    <small>
+                        O padrão do OpenStreetMap exige que a página seja servida por HTTP com Referer
+                        válido. Aberta direto do disco, ela recebe erro 403 e o mapa troca sozinho de
+                        provedor.
+                    </small>
+                    <select id="prefProvedor">
+                        <option value="">Automático (recomendado)</option>
+                        <option value="osm">OpenStreetMap padrão</option>
+                        <option value="carto">CARTO Voyager</option>
+                    </select>
+                </div>
+
+                <div class="config-campo">
+                    <label for="prefApi">Endereço da API</label>
+                    <small>
+                        Necessário para rotas acessíveis e relatos de barreira. Em branco, o mapa usa o
+                        acervo local e esses recursos ficam indisponíveis.
+                    </small>
+                    <input type="url" id="prefApi" placeholder="http://localhost:8080">
+                </div>
+
+                <p class="nota" id="notaArquivoLocal" hidden>
+                    Esta página está aberta por <code>file://</code>. Para o mapa padrão do OpenStreetMap
+                    e para o backend funcionarem, sirva a pasta por HTTP:
+                    <code>npx serve .</code> ou <code>python -m http.server</code>.
+                </p>
+            </div>
+
+            <button class="btn-save" onclick="salvarConfig()">Salvar alterações</button>
             <a href="index.html" class="back-link">Cancelar e voltar</a>
         </div>
     </div>
 
+    <script src="js/config.js"></script>
     <script>
-        // Ao carregar a página, verifica se já existem preferências salvas
-        window.onload = function() {
-            if(localStorage.getItem("preferenciaAcessibilidade") === "visual") {
-                document.getElementById("prefVisual").checked = true;
+        function ler(chave) {
+            try {
+                return localStorage.getItem(chave);
+            } catch {
+                return null;
             }
-            if(localStorage.getItem("altoContraste") === "true") {
-                document.getElementById("prefContraste").checked = true;
+        }
+
+        function gravar(chave, valor) {
+            try {
+                localStorage.setItem(chave, valor);
+            } catch {
+                /* armazenamento bloqueado: a preferência vale só nesta sessão */
             }
-        };
+        }
+
+        window.addEventListener('load', function () {
+            document.getElementById('prefVisual').checked = ler('preferenciaAcessibilidade') === 'visual';
+            document.getElementById('prefContraste').checked = ler('altoContraste') === 'true';
+            document.getElementById('prefFonte').checked = ler('fonteLegivel') === 'true';
+
+            var perfil = ler(MobiliTudoConfig.chavePerfil);
+            if (perfil) {
+                document.getElementById('prefPerfil').value = perfil;
+            }
+
+            var provedor = MobiliTudoConfig.provedorPreferido();
+            document.getElementById('prefProvedor').value = provedor ? provedor.id : '';
+
+            // Mostra o endereço em uso, mesmo quando veio do padrão de desenvolvimento.
+            document.getElementById('prefApi').value = MobiliTudoConfig.baseDaApi() || '';
+
+            if (MobiliTudoConfig.abertoComoArquivoLocal()) {
+                document.getElementById('notaArquivoLocal').hidden = false;
+            }
+        });
 
         function salvarConfig() {
-            // Salva se o leitor deve estar ligado
-            const visual = document.getElementById("prefVisual").checked;
-            localStorage.setItem("preferenciaAcessibilidade", visual ? "visual" : "padrao");
+            gravar('preferenciaAcessibilidade',
+                document.getElementById('prefVisual').checked ? 'visual' : 'padrao');
+            gravar('altoContraste', String(document.getElementById('prefContraste').checked));
+            gravar('fonteLegivel', String(document.getElementById('prefFonte').checked));
+            gravar(MobiliTudoConfig.chavePerfil, document.getElementById('prefPerfil').value);
 
-            // Salva se o contraste deve estar ligado
-            const contraste = document.getElementById("prefContraste").checked;
-            localStorage.setItem("altoContraste", contraste ? "true" : "false");
+            MobiliTudoConfig.definirProvedor(document.getElementById('prefProvedor').value);
+            MobiliTudoConfig.definirBaseDaApi(document.getElementById('prefApi').value.trim());
 
-            alert("Configurações salvas! O MobiliTudo será atualizado.");
-            window.location.href = "index.html"; // Volta para o mapa
+            window.location.href = 'index.html';
         }
     </script>
 </body>

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>Perfil - MobiliTudo</title>
     <link rel="stylesheet" href="style.css">
     <style>
@@ -23,6 +24,7 @@
     <div class="container-perfil" id="cardPrincipal">
         </div>
 
+    <script src="js/config.js"></script>
     <script>
         const card = document.getElementById("cardPrincipal");
 
@@ -41,7 +43,7 @@
                 `;
             } else {
                 // TELA DE PERFIL PRONTO
-                const pcd = localStorage.getItem("tipoMobilidade") || "Cadeira de Rodas";
+                const pcd = localStorage.getItem("tipoMobilidade") || "Não informado";
                 card.innerHTML = `
                     <img src="https://ui-avatars.com/api/?name=${nome}&background=0056b3&color=fff" class="profile-pic">
                     <h2 style="margin: 5px 0;">${nome}</h2>
@@ -62,7 +64,13 @@
             card.innerHTML = `
                 <h2>Criar Conta</h2>
                 <input type="text" id="nomeIn" class="input-campo" placeholder="Nome Completo">
-                <input type="text" id="pcdIn" class="input-campo" placeholder="Necessidade (ex: Cadeira de Rodas)">
+                <label for="perfilIn" style="display:block;text-align:left;font-size:13px;color:#666;margin-bottom:6px;">Como você se desloca</label>
+                <select id="perfilIn" class="input-campo">
+                    <option value="CADEIRA_DE_RODAS">Cadeira de rodas</option>
+                    <option value="MOBILIDADE_REDUZIDA">Mobilidade reduzida</option>
+                    <option value="DEFICIENCIA_VISUAL">Deficiência visual</option>
+                    <option value="PADRAO">Sem restrições</option>
+                </select>
                 <button class="btn-acao btn-primario" onclick="salvar('cadastro')">Finalizar Cadastro</button>
                 <button class="btn-voltar-link" style="border:none; background:none; cursor:pointer;" onclick="renderizar()">← Voltar</button>
             `;
@@ -93,19 +101,12 @@
 
     localStorage.setItem("nomeUsuario", nome);
 
-    // Se for cadastro, valida também a necessidade
+    // O perfil vem de uma lista fechada, então não há o que validar: o que precisa
+    // ser gravado é o identificador que o cálculo de rota entende.
     if (tipo === 'cadastro') {
-        const pcd = document.getElementById("pcdIn").value;
-        
-        if (!pcd) {
-            return alert("Por favor, informe sua necessidade!");
-        }
-
-        if (!apenasLetras.test(pcd)) {
-            return alert("Erro: O campo Necessidade deve conter apenas letras!");
-        }
-        
-        localStorage.setItem("tipoMobilidade", pcd);
+        const perfil = document.getElementById("perfilIn");
+        localStorage.setItem(MobiliTudoConfig.chavePerfil, perfil.value);
+        localStorage.setItem("tipoMobilidade", perfil.options[perfil.selectedIndex].text);
     }
 
     renderizar();
@@ -113,6 +114,7 @@
         function sair() {
             localStorage.removeItem("nomeUsuario");
             localStorage.removeItem("tipoMobilidade");
+            localStorage.removeItem(MobiliTudoConfig.chavePerfil);
             renderizar();
         }
 
