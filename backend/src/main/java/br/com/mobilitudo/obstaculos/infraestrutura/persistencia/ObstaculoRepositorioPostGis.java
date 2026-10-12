@@ -1,6 +1,8 @@
 package br.com.mobilitudo.obstaculos.infraestrutura.persistencia;
 
 import br.com.mobilitudo.compartilhado.dominio.Coordenada;
+import br.com.mobilitudo.compartilhado.dominio.Paginacao;
+import br.com.mobilitudo.compartilhado.infraestrutura.persistencia.PaginacaoJpa;
 import br.com.mobilitudo.obstaculos.dominio.modelo.Obstaculo;
 import br.com.mobilitudo.obstaculos.dominio.modelo.StatusValidacao;
 import br.com.mobilitudo.obstaculos.dominio.porta.RepositorioObstaculos;
@@ -31,15 +33,23 @@ class ObstaculoRepositorioPostGis implements RepositorioObstaculos {
     }
 
     @Override
-    public List<Obstaculo> porStatus(StatusValidacao status) {
-        return jpa.findAllByStatusOrderByReportadoEmDesc(status).stream()
+    public List<Obstaculo> porStatus(StatusValidacao status, Paginacao paginacao) {
+        return jpa.findAllByStatusOrderByReportadoEmDesc(status, PaginacaoJpa.semOrdenacao(paginacao)).stream()
                 .map(ObstaculoEntidade::paraDominio)
                 .toList();
     }
 
     @Override
-    public List<Obstaculo> naArea(Coordenada centro, double raioMetros) {
-        return jpa.buscarNaArea(centro.latitude(), centro.longitude(), raioMetros).stream()
+    public List<Obstaculo> porStatusCompleto(StatusValidacao status) {
+        return jpa.findAllByStatus(status).stream()
+                .map(ObstaculoEntidade::paraDominio)
+                .toList();
+    }
+
+    @Override
+    public List<Obstaculo> naArea(Coordenada centro, double raioMetros, Paginacao paginacao) {
+        return jpa.buscarNaArea(centro.latitude(), centro.longitude(), raioMetros,
+                        PaginacaoJpa.semOrdenacao(paginacao)).stream()
                 .map(ObstaculoEntidade::paraDominio)
                 .toList();
     }

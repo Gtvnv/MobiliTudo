@@ -1,11 +1,22 @@
-# MobiliTudo
+<div align="center">
 
-Mapeamento colaborativo de acessibilidade urbana em Praia Grande (SP), com cálculo de
-rotas que contornam barreiras segundo o perfil de mobilidade de quem caminha.
+# 🧭 MobiliTudo
+
+**Mapeamento colaborativo de acessibilidade urbana em Praia Grande (SP), com cálculo de
+rotas que contornam barreiras segundo o perfil de mobilidade de quem caminha.**
+
+[![CI](https://github.com/YasKarmem/MobiliTudo/actions/workflows/ci.yml/badge.svg)](https://github.com/YasKarmem/MobiliTudo/actions/workflows/ci.yml)
+![Java](https://img.shields.io/badge/Java-21-orange?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=springboot&logoColor=white)
+![PostGIS](https://img.shields.io/badge/PostgreSQL%20%2B%20PostGIS-16%20%2F%203.4-336791?logo=postgresql&logoColor=white)
+![Leaflet](https://img.shields.io/badge/Leaflet-1.9-199900?logo=leaflet&logoColor=white)
+![Testes](https://img.shields.io/badge/testes-114%20passando-brightgreen)
 
 Projeto de extensão — Engenharia de Software, Faculdade Descomplica.
 Alinhado aos ODS **9** (Indústria, Inovação e Infraestrutura) e **11** (Cidades e
 Comunidades Sustentáveis).
+
+</div>
 
 ---
 
@@ -17,6 +28,29 @@ rodas, essa é a pergunta errada: o caminho mais curto pode ter um degrau, uma c
 
 O MobiliTudo responde outra pergunta: **qual é o caminho que eu consigo percorrer**. A
 rota devolvida costuma ser mais longa em metros e mais curta em barreiras.
+
+<table>
+<tr>
+<td width="60%">
+<img src="docs/screenshots/mapa.jpg" alt="Mapa do MobiliTudo mostrando Praia Grande, com locais mapeados e obstáculos reportados" width="100%">
+<p align="center"><sub>Mapa interativo, com locais acessíveis e obstáculos reportados pela comunidade</sub></p>
+</td>
+<td width="40%">
+<img src="docs/screenshots/curadoria.png" alt="Painel de curadoria mostrando três obstáculos pendentes de validação, cada um com botões Validar e Rejeitar" width="100%">
+<p align="center"><sub>Curadoria: obstáculos só desviam rotas depois de validados</sub></p>
+</td>
+</tr>
+</table>
+
+### ✨ Destaques
+
+- 🧭 **Rotas acessíveis de verdade** — A* ponderado por acessibilidade, não a distância mais curta, com parâmetros da ABNT NBR 9050
+- 🗺️ **Dados espaciais reais** — PostgreSQL + PostGIS, índices GiST, consultas por proximidade e recorte de malha
+- 🤝 **Colaborativo com curadoria** — qualquer pessoa reporta uma barreira; só um relato validado chega a desviar rota de alguém
+- 🔒 **Curadoria autenticada e com limite de abuso** — token dedicado para validar/rejeitar/resolver, limite de relatos por hora
+- 🏗️ **Arquitetura hexagonal** — domínio sem dependência de framework, testável em milissegundos, sem banco
+- ✅ **114 testes automatizados** — 64 de domínio + 15 de integração (PostGIS real via Testcontainers) no backend, 35 no front-end
+- 🩹 **Resiliente a falha** — sem backend, o mapa continua funcionando com o acervo local; sem o provedor padrão de tiles, troca sozinho
 
 ---
 
@@ -66,22 +100,32 @@ mvn spring-boot:run
 | `MOBILITUDO_DB_USER` / `MOBILITUDO_DB_PASSWORD` | `mobilitudo` |
 | `MOBILITUDO_PORT` | `8080` |
 | `MOBILITUDO_CORS_ORIGENS` | `http://localhost:*,http://127.0.0.1:*` |
+| `MOBILITUDO_CURADOR_TOKEN` | *(vazio — curadoria desativada até ser definido)* |
+| `MOBILITUDO_LIMITE_OBSTACULOS_HORA` | `20` |
+
+Sem `MOBILITUDO_CURADOR_TOKEN`, a API sobe normalmente, mas validar, rejeitar ou resolver
+um obstáculo responde `503` até a variável ser definida — a curadoria falha fechada, nunca
+aberta por omissão (ver [docs/api.md](docs/api.md)). O `docker compose` já sobe com um
+token de desenvolvimento (`dev-apenas-nao-use-em-producao`); troque-o antes de publicar a
+API em qualquer lugar acessível pela rede.
 
 ---
 
 ## Estrutura
 
 ```
-index.html  config.html  perfil.html  sobre.html   mapa (Leaflet, sem build)
+index.html  config.html  perfil.html  sobre.html  curadoria.html   mapa (Leaflet, sem build)
 style.css   script.js    locais.json
 js/
-  config.js        endereço da API e provedores de tiles
+  texto.js         escape de HTML compartilhado (proteção contra XSS)
+  config.js        endereço da API, provedores de tiles e o token de curadoria
   mapa.js          camada base com tolerância ao 403 do OSM
   api.js           cliente REST, com degradação para o acervo local
   rotas.js         painel de rota acessível
   obstaculos.js    relato colaborativo de barreiras
+tests/frontend/    testes do js/*.js (vitest + jsdom)
 backend/           API Spring Boot + PostgreSQL/PostGIS (arquitetura hexagonal)
-docs/              arquitetura, API e o diagnóstico do erro 403
+docs/              arquitetura, API, diagnóstico do erro 403 e capturas de tela
 docker-compose.yml
 ```
 
@@ -104,7 +148,10 @@ parâmetros baseados na ABNT NBR 9050:2020 (faixa livre de 1,20 m, rampa de até
 | Piso tátil | reduz o custo para quem tem deficiência visual |
 
 Obstáculos reportados pela comunidade só influenciam rotas **depois de validados**: um
-relato não conferido não pode bloquear o caminho de outra pessoa.
+relato não conferido não pode bloquear o caminho de outra pessoa. Validar, rejeitar ou
+resolver um relato é feito na página **Curadoria de obstáculos** do mapa e exige o token
+configurado em `MOBILITUDO_CURADOR_TOKEN` — sem isso, qualquer pessoa poderia inventar uma
+barreira e desviar a rota de outra pessoa, ou apagar uma barreira real do mapa.
 
 Detalhes do algoritmo em [docs/arquitetura.md](docs/arquitetura.md).
 
@@ -114,23 +161,35 @@ Detalhes do algoritmo em [docs/arquitetura.md](docs/arquitetura.md).
 
 ```bash
 cd backend
-mvn test                          # 47 testes de domínio, sem banco, segundos
-mvn verify -DskipITs=false        # + 6 testes de integração contra PostGIS real (exige Docker)
+mvn test                          # 64 testes de domínio, sem banco, segundos
+mvn verify -DskipITs=false        # + 15 testes de integração contra PostGIS real (exige Docker)
+```
+
+```bash
+npm install
+npm test                          # 35 testes de js/*.js (config, api, escape de HTML)
 ```
 
 O domínio é livre de framework, então as regras de acessibilidade e o algoritmo de rota
 rodam em teste unitário comum. Os testes de integração cobrem o que o unitário não
-alcança: migrações Flyway, mapeamento das colunas `geometry`, consultas espaciais e a
-rota ponta a ponta pela API.
+alcança: migrações Flyway, mapeamento das colunas `geometry`, consultas espaciais, a
+autenticação da curadoria, o limite de relatos por hora, a paginação e a rota ponta a
+ponta pela API. Os testes de front-end cobrem o cliente HTTP (degradação para o acervo
+local, estado online/offline, cabeçalhos de autenticação) e o escape de HTML que protege
+contra XSS ao renderizar dado vindo da API.
 
 ---
 
 ## Documentação
 
-- [Arquitetura](docs/arquitetura.md) — contextos delimitados, algoritmo de rota, persistência espacial
-- [API v1](docs/api.md) — endpoints, exemplos e códigos de erro
+- [Arquitetura](docs/arquitetura.md) — contextos delimitados, algoritmo de rota, persistência espacial, segurança
+- [API v1](docs/api.md) — endpoints, paginação, autenticação da curadoria e códigos de erro
 - [Erro 403 nos tiles do OpenStreetMap](docs/mapa-tiles.md) — diagnóstico e correção
 
 ---
 
+<div align="center">
+
 Desenvolvido por Yasmim Carmem Mariano Rocha · Engenharia de Software · 2026
+
+</div>

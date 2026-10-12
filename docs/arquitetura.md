@@ -126,12 +126,44 @@ quase sempre sai da reta entre os dois pontos.
 O esquema pertence ao Flyway; o Hibernate roda com `ddl-auto: validate`. Deixá-lo gerar
 DDL faria as colunas `geometry` nascerem sem SRID e sem índice GiST.
 
+## Segurança da curadoria
+
+Validar, rejeitar ou resolver um obstáculo é o único ponto da API que exige autenticação:
+sem isso, qualquer pessoa que descobrisse o endpoint podia validar uma barreira inventada
+— desviando toda rota por um caminho pior — ou resolver uma real, apagando-a do mapa de
+quem depende dela. Reportar continua aberto de propósito: exigir cadastro para relatar
+afastaria exatamente quem o projeto quer ouvir.
+
+[`FiltroAutenticacaoCurador`](../backend/src/main/java/br/com/mobilitudo/compartilhado/infraestrutura/seguranca/FiltroAutenticacaoCurador.java)
+é um `OncePerRequestFilter` comum comparando um segredo compartilhado
+(`MOBILITUDO_CURADOR_TOKEN`) em tempo constante — não Spring Security completo, que traria
+configuração desproporcional ao problema (um segredo, não um sistema de usuários). Sem o
+token configurado, a curadoria falha fechada (503), nunca aberta por omissão.
+
+[`FiltroLimiteDeObstaculos`](../backend/src/main/java/br/com/mobilitudo/compartilhado/infraestrutura/seguranca/FiltroLimiteDeObstaculos.java)
+limita relatos por IP numa janela deslizante em memória
+([`LimitadorDeTaxa`](../backend/src/main/java/br/com/mobilitudo/compartilhado/infraestrutura/seguranca/LimitadorDeTaxa.java)),
+para que o relato continue sem cadastro sem abrir espaço para inundar o mapa ou a fila de
+curadoria.
+
+## Paginação
+
+[`Paginacao`](../backend/src/main/java/br/com/mobilitudo/compartilhado/dominio/Paginacao.java)
+e [`PaginaDeResultado`](../backend/src/main/java/br/com/mobilitudo/compartilhado/dominio/PaginaDeResultado.java)
+evitam um `COUNT(*)` sobre a tabela inteira a cada listagem: a página pedida é buscada
+normalmente, e só quando ela vem cheia uma segunda consulta, igualmente indexada, busca a
+página seguinte só para checar se tem algo. Uma primeira versão tentou economizar essa
+segunda consulta pedindo "um item a mais" na mesma chamada — mas como o deslocamento SQL é
+`página × tamanho`, mudar o tamanho para calcular esse item extra desalinhava o
+deslocamento de qualquer página além da primeira. O teste de regressão para esse bug
+específico é `PaginacaoTest.paginaDoMeioUsaODeslocamentoCorreto`.
+
 ## Testes
 
 | Camada | O que cobre | Como rodar |
 |---|---|---|
-| Domínio (47 testes) | regras de acessibilidade, A*, ciclo de vida do obstáculo, geodésia | `mvn test` |
-| Integração (6 testes) | migrações Flyway, mapeamento `geometry`, consultas espaciais, rota ponta a ponta | `mvn verify -DskipITs=false` (exige Docker) |
+| Domínio (64 testes) | regras de acessibilidade, A*, ciclo de vida do obstáculo, geodésia, paginação, autenticação da curadoria, limite de taxa | `mvn test` |
+| Integração (15 testes) | migrações Flyway, mapeamento `geometry`, consultas espaciais, rota ponta a ponta, autenticação da curadoria, limite de relatos, paginação | `mvn verify -DskipITs=false` (exige Docker) |
 
 Os testes de integração ficam fora do build padrão porque dependem de Docker. Eles são o
 único lugar que verifica o que um teste unitário não alcança — e foram eles que pegaram,

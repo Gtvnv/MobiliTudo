@@ -5,6 +5,8 @@ import br.com.mobilitudo.acessibilidade.aplicacao.RegistrarLocal;
 import br.com.mobilitudo.acessibilidade.dominio.modelo.CategoriaLocal;
 import br.com.mobilitudo.acessibilidade.dominio.modelo.Local;
 import br.com.mobilitudo.compartilhado.dominio.Coordenada;
+import br.com.mobilitudo.compartilhado.dominio.PaginaDeResultado;
+import br.com.mobilitudo.compartilhado.dominio.Paginacao;
 import br.com.mobilitudo.compartilhado.dominio.PerfilMobilidade;
 import br.com.mobilitudo.compartilhado.infraestrutura.web.Perfis;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,34 +43,45 @@ class LocalController {
     }
 
     @GetMapping
-    @Operation(summary = "Lista locais, opcionalmente filtrados por categoria, proximidade e perfil")
-    List<LocalDTO> listar(@RequestParam(required = false) String categoria,
-                          @RequestParam(required = false) Double lat,
-                          @RequestParam(required = false) Double lng,
-                          @RequestParam(required = false) Double raio,
-                          @RequestParam(required = false) String perfil) {
+    @Operation(summary = "Lista locais, opcionalmente filtrados por categoria, proximidade e perfil",
+            description = "Paginado: use pagina (a partir de 0) e tamanho (máximo 200, padrão 50). "
+                    + "O cabeçalho X-Tem-Proxima-Pagina da resposta diz se há mais itens além desta página.")
+    ResponseEntity<List<LocalDTO>> listar(@RequestParam(required = false) String categoria,
+                                          @RequestParam(required = false) Double lat,
+                                          @RequestParam(required = false) Double lng,
+                                          @RequestParam(required = false) Double raio,
+                                          @RequestParam(required = false) String perfil,
+                                          @RequestParam(required = false) Integer pagina,
+                                          @RequestParam(required = false) Integer tamanho) {
         PerfilMobilidade perfilMobilidade = Perfis.interpretar(perfil);
+        Paginacao paginacao = Paginacao.de(pagina, tamanho);
 
-        List<Local> encontrados;
+        PaginaDeResultado<Local> encontrados;
         if (lat != null && lng != null) {
             Coordenada referencia = new Coordenada(lat, lng);
             double raioMetros = raio == null ? RAIO_PADRAO_METROS : raio;
             encontrados = perfil == null
-                    ? consultarLocais.proximosDe(referencia, raioMetros)
-                    : consultarLocais.proximosCompativeisCom(referencia, raioMetros, perfilMobilidade);
+                    ? consultarLocais.proximosDe(referencia, raioMetros, paginacao)
+                    : consultarLocais.proximosCompativeisCom(referencia, raioMetros, perfilMobilidade, paginacao);
         } else {
             encontrados = consultarLocais.porCategoria(
-                    CategoriaLocal.porIdentificador(categoria).orElse(null));
+                    CategoriaLocal.porIdentificador(categoria).orElse(null), paginacao);
         }
 
-        // O filtro por categoria tambem vale para a busca por proximidade.
-        return encontrados.stream()
+        // O filtro por categoria tambem vale para a busca por proximidade. Ele atua sobre
+        // a pagina ja trazida do banco, entao pode devolver menos itens que o tamanho
+        // pedido quando parte da pagina pertence a outra categoria.
+        List<LocalDTO> corpo = encontrados.itens().stream()
                 .filter(local -> categoria == null
                         || CategoriaLocal.porIdentificador(categoria)
                         .map(alvo -> alvo == local.categoria())
                         .orElse(true))
                 .map(local -> LocalDTO.de(local, perfilMobilidade))
                 .toList();
+
+        return ResponseEntity.ok()
+                .header("X-Tem-Proxima-Pagina", String.valueOf(encontrados.temProximaPagina()))
+                .body(corpo);
     }
 
     @GetMapping("/{id}")

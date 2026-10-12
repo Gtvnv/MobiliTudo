@@ -4,6 +4,8 @@ import br.com.mobilitudo.acessibilidade.dominio.modelo.CategoriaLocal;
 import br.com.mobilitudo.acessibilidade.dominio.modelo.Local;
 import br.com.mobilitudo.acessibilidade.dominio.porta.RepositorioLocais;
 import br.com.mobilitudo.compartilhado.dominio.Coordenada;
+import br.com.mobilitudo.compartilhado.dominio.Paginacao;
+import br.com.mobilitudo.compartilhado.infraestrutura.persistencia.PaginacaoJpa;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -31,20 +33,23 @@ class LocalRepositorioPostGis implements RepositorioLocais {
     }
 
     @Override
-    public List<Local> todos() {
-        return jpa.findAllByOrderByNomeAsc().stream().map(LocalEntidade::paraDominio).toList();
-    }
-
-    @Override
-    public List<Local> porCategoria(CategoriaLocal categoria) {
-        return jpa.findAllByCategoriaOrderByNomeAsc(categoria).stream()
+    public List<Local> todos(Paginacao paginacao) {
+        return jpa.findAllByOrderByNomeAsc(PaginacaoJpa.semOrdenacao(paginacao)).stream()
                 .map(LocalEntidade::paraDominio)
                 .toList();
     }
 
     @Override
-    public List<Local> proximosDe(Coordenada referencia, double raioMetros) {
-        return jpa.buscarProximos(referencia.latitude(), referencia.longitude(), raioMetros).stream()
+    public List<Local> porCategoria(CategoriaLocal categoria, Paginacao paginacao) {
+        return jpa.findAllByCategoriaOrderByNomeAsc(categoria, PaginacaoJpa.semOrdenacao(paginacao)).stream()
+                .map(LocalEntidade::paraDominio)
+                .toList();
+    }
+
+    @Override
+    public List<Local> proximosDe(Coordenada referencia, double raioMetros, Paginacao paginacao) {
+        return jpa.buscarProximos(referencia.latitude(), referencia.longitude(), raioMetros,
+                        PaginacaoJpa.semOrdenacao(paginacao)).stream()
                 .map(LocalEntidade::paraDominio)
                 .toList();
     }

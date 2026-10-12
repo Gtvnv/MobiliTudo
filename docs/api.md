@@ -9,6 +9,35 @@ Perfis aceitos em qualquer endpoint: `CADEIRA_DE_RODAS`, `MOBILIDADE_REDUZIDA`,
 `DEFICIENCIA_VISUAL`, `PADRAO`. Valor ausente ou desconhecido cai em `PADRAO` — um perfil
 escrito errado degrada a recomendação, não derruba a consulta.
 
+### Paginação
+
+Toda listagem (`GET /locais`, `GET /obstaculos`) aceita `pagina` (a partir de 0, padrão 0)
+e `tamanho` (padrão 50, máximo 200 — acima disso responde 400). A resposta continua um
+array simples, como antes; o cabeçalho `X-Tem-Proxima-Pagina` (`true`/`false`) diz se há
+mais conteúdo além desta página, sem custar uma consulta `COUNT(*)` sobre a tabela
+inteira.
+
+Quando a listagem combina um filtro calculado em memória com a busca ao banco — categoria
+depois de uma busca por proximidade, ou nível de acessibilidade por perfil — a página pode
+voltar com menos itens que o `tamanho` pedido: o filtro atua sobre a página já paginada,
+não sobre o acervo inteiro. Para os volumes atuais do projeto isso não chega a ser um
+problema prático; ver a documentação de `ConsultarLocais` no código para o porquê.
+
+### Autenticação da curadoria
+
+`POST /obstaculos/{id}/validacao` exige o cabeçalho `X-Mobilitudo-Curador-Token`,
+comparado em tempo constante contra o valor configurado em `MOBILITUDO_CURADOR_TOKEN` no
+servidor. Sem o cabeçalho ou com o valor errado, responde `401`; se o servidor não tiver
+`MOBILITUDO_CURADOR_TOKEN` configurado, responde `503` — a curadoria falha fechada, nunca
+aberta por omissão. Reportar um obstáculo (`POST /obstaculos`) continua sem exigir nada:
+é a confirmação que precisa de confiança, não o relato.
+
+### Limite de relatos
+
+`POST /obstaculos` aceita no máximo `MOBILITUDO_LIMITE_OBSTACULOS_HORA` relatos por hora
+por endereço IP (padrão 20). Acima disso, responde `429 Too Many Requests`. Não afeta
+leitura nem a curadoria.
+
 ---
 
 ## Locais
@@ -21,6 +50,7 @@ escrito errado degrada a recomendação, não derruba a consulta.
 | `lat`, `lng` | número | busca por proximidade; exigem-se os dois |
 | `raio` | número | raio em metros (padrão 2000) |
 | `perfil` | texto | classifica cada local e, na busca por proximidade, omite os inacessíveis |
+| `pagina`, `tamanho` | número | paginação — ver acima |
 
 ```json
 [
@@ -129,7 +159,8 @@ urbana real isolando um destino — exatamente o dado que o projeto existe para 
 
 ### `GET /api/v1/obstaculos`
 
-`status` (padrão `VALIDADO`), ou `lat` + `lng` + `raio` para busca por proximidade.
+`status` (padrão `VALIDADO`), ou `lat` + `lng` + `raio` para busca por proximidade. Aceita
+`pagina`/`tamanho`, como `/locais`.
 
 ### `POST /api/v1/obstaculos`
 
@@ -146,17 +177,25 @@ urbana real isolando um destino — exatamente o dado que o projeto existe para 
 
 O relato nasce `PENDENTE` e **não** influencia rota alguma. Só passa a desviar trajetos
 depois de validado — um relato não conferido não pode bloquear o caminho de outra pessoa.
+Não exige autenticação; está sujeito ao limite de relatos por hora (ver acima).
 
 ### `POST /api/v1/obstaculos/{id}/validacao`
 
-```json
+Exige o cabeçalho `X-Mobilitudo-Curador-Token` (ver **Autenticação da curadoria** acima).
+
+```http
+POST /api/v1/obstaculos/a1b2c3.../validacao
+X-Mobilitudo-Curador-Token: <token configurado no servidor>
+Content-Type: application/json
+
 { "acao": "VALIDAR" }
 ```
 
 Ações: `VALIDAR`, `REJEITAR`, `RESOLVER`. O ciclo de vida é
 `PENDENTE → VALIDADO → RESOLVIDO` ou `PENDENTE → REJEITADO`; qualquer outra transição
 responde `409`. Resolver um relato rejeitado seria afirmar que a cidade consertou algo que
-nunca esteve lá.
+nunca esteve lá. Sem o token correto, `401`; sem `MOBILITUDO_CURADOR_TOKEN` configurado no
+servidor, `503`.
 
 ---
 

@@ -98,6 +98,36 @@
         return global.location.protocol === 'file:';
     }
 
+    var CHAVE_TOKEN_CURADOR = 'mobilitudo.tokenCurador';
+
+    /**
+     * O token de curadoria fica em sessionStorage, não em localStorage.
+     *
+     * É um segredo, ainda que simples: diferente do perfil de mobilidade ou do provedor
+     * de mapa, não deve sobreviver ao fechar a aba num computador que outra pessoa também
+     * usa. sessionStorage soma isso de graça — expira com a aba — sem exigir lógica
+     * própria de expiração aqui.
+     */
+    function tokenCurador() {
+        try {
+            return global.sessionStorage.getItem(CHAVE_TOKEN_CURADOR);
+        } catch (erro) {
+            return null;
+        }
+    }
+
+    function definirTokenCurador(valor) {
+        try {
+            if (valor) {
+                global.sessionStorage.setItem(CHAVE_TOKEN_CURADOR, valor);
+            } else {
+                global.sessionStorage.removeItem(CHAVE_TOKEN_CURADOR);
+            }
+        } catch (erro) {
+            /* sessão privada ou armazenamento bloqueado: o token vale só nesta chamada */
+        }
+    }
+
     global.MobiliTudoConfig = {
         PROVEDORES: PROVEDORES,
         baseDaApi: baseDaApi,
@@ -110,6 +140,8 @@
         },
         abertoComoArquivoLocal: abertoComoArquivoLocal,
         PERFIL_PADRAO: 'PADRAO',
-        chavePerfil: 'mobilitudo.perfil'
+        chavePerfil: 'mobilitudo.perfil',
+        tokenCurador: tokenCurador,
+        definirTokenCurador: definirTokenCurador
     };
 }(window));

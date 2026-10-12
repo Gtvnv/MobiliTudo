@@ -38,3 +38,22 @@ jobs:
           path: |
             backend/target/surefire-reports/
             backend/target/failsafe-reports/
+
+  frontend:
+    name: Frontend (js/*.js via vitest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Testes de js/*.js (config, api, escape de HTML)
+        run: npm test

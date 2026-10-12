@@ -3,6 +3,7 @@ package br.com.mobilitudo.acessibilidade.dominio.porta;
 import br.com.mobilitudo.acessibilidade.dominio.modelo.CategoriaLocal;
 import br.com.mobilitudo.acessibilidade.dominio.modelo.Local;
 import br.com.mobilitudo.compartilhado.dominio.Coordenada;
+import br.com.mobilitudo.compartilhado.dominio.Paginacao;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,10 +21,10 @@ public interface RepositorioLocais {
 
     Optional<Local> porId(UUID id);
 
-    List<Local> todos();
+    List<Local> todos(Paginacao paginacao);
 
-    List<Local> porCategoria(CategoriaLocal categoria);
+    List<Local> porCategoria(CategoriaLocal categoria, Paginacao paginacao);
 
     /** Locais dentro do raio informado, ordenados do mais proximo ao mais distante. */
-    List<Local> proximosDe(Coordenada referencia, double raioMetros);
+    List<Local> proximosDe(Coordenada referencia, double raioMetros, Paginacao paginacao);
 }

@@ -31,7 +31,7 @@ class FonteDeObstaculosValidados implements FonteDeObstaculos {
     @Override
     @Transactional(readOnly = true)
     public Map<String, List<ObstaculoNoTrecho>> porSegmentoNaArea(AreaRetangular area) {
-        return repositorio.porStatus(StatusValidacao.VALIDADO).stream()
+        return repositorio.porStatusCompleto(StatusValidacao.VALIDADO).stream()
                 .filter(obstaculo -> area.contem(obstaculo.coordenada()))
                 .filter(obstaculo -> obstaculo.segmentoViaId().isPresent())
                 .collect(Collectors.groupingBy(

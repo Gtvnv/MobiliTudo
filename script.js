@@ -145,20 +145,8 @@ function obterIconeRecurso(recurso) {
     return ICONES_DE_RECURSO[recurso] || '✅';
 }
 
-/**
- * Escapa texto para interpolação em HTML, aspas inclusive.
- *
- * textContent sozinho cobre &, < e >, mas não as aspas — e o conteúdo aqui entra dentro
- * de atributos, onde uma aspa solta quebra a marcação.
- */
-function escapar(texto) {
-    return String(texto === null || texto === undefined ? '' : texto)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
+// Escape de HTML: ver js/texto.js. Alias local para não reescrever cada chamada.
+var escapar = MobiliTudoTexto.escapar;
 
 function mostrarDetalhes(local) {
     var container = document.getElementById('placeDetails');

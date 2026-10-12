@@ -44,6 +44,11 @@ services:
       MOBILITUDO_DB_USER: mobilitudo
       MOBILITUDO_DB_PASSWORD: mobilitudo
       MOBILITUDO_CORS_ORIGENS: "http://localhost:8081,http://127.0.0.1:8081"
+      # Segredo da curadoria de obstáculos (ver FiltroAutenticacaoCurador). Este valor
+      # serve só para subir o projeto localmente — troque-o (ou melhor, defina via
+      # variável de ambiente do host, sem editar este arquivo) antes de publicar a API
+      # em qualquer lugar acessível pela rede.
+      MOBILITUDO_CURADOR_TOKEN: ${MOBILITUDO_CURADOR_TOKEN:-dev-apenas-nao-use-em-producao}
     ports:
       - "8080:8080"
 
@@ -59,6 +64,7 @@ services:
       - ./config.html:/usr/share/nginx/html/config.html:ro
       - ./perfil.html:/usr/share/nginx/html/perfil.html:ro
       - ./sobre.html:/usr/share/nginx/html/sobre.html:ro
+      - ./curadoria.html:/usr/share/nginx/html/curadoria.html:ro
       - ./style.css:/usr/share/nginx/html/style.css:ro
       - ./script.js:/usr/share/nginx/html/script.js:ro
       - ./locais.json:/usr/share/nginx/html/locais.json:ro

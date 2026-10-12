@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>Curadoria - MobiliTudo</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #f4f6f9; color: #333; overflow-y: auto; }
+        .curadoria-container { max-width: 800px; margin: 40px auto; padding: 20px; }
+
+        .curadoria-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .curadoria-header h1 { margin: 0; font-size: 24px; color: #0056b3; }
+
+        .card-token {
+            background: white; border-radius: 15px; padding: 20px 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 25px;
+        }
+        .card-token label { display: block; font-weight: bold; font-size: 14px; margin-bottom: 6px; }
+        .card-token small { display: block; color: #888; font-size: 12px; margin-bottom: 10px; line-height: 1.5; }
+        .linha-token { display: flex; gap: 10px; }
+        .linha-token input {
+            flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;
+        }
+        .linha-token button {
+            padding: 10px 18px; border: none; border-radius: 8px; background: #0056b3; color: white;
+            font-weight: bold; cursor: pointer;
+        }
+        .status-token { margin-top: 10px; font-size: 13px; }
+        .status-token.ok { color: #14612c; }
+        .status-token.ausente { color: #a86400; }
+
+        .abas { display: flex; gap: 8px; margin-bottom: 15px; }
+        .aba {
+            padding: 8px 16px; border-radius: 20px; border: 1px solid #ddd; background: white;
+            font-size: 13px; cursor: pointer; font-weight: bold; color: #555;
+        }
+        .aba.ativa { background: #0056b3; color: white; border-color: #0056b3; }
+
+        .lista-obstaculos { display: flex; flex-direction: column; gap: 14px; }
+        .item-obstaculo {
+            background: white; border-radius: 12px; padding: 18px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 5px solid #d98200;
+        }
+        .item-obstaculo.severidade-critica { border-left-color: #c62828; }
+        .item-obstaculo.severidade-leve { border-left-color: #999; }
+
+        .item-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+        .item-topo h3 { margin: 0; font-size: 16px; }
+        .item-meta { font-size: 12px; color: #888; }
+        .item-descricao { margin: 8px 0; font-size: 14px; color: #555; }
+        .item-coords { font-size: 12px; color: #999; font-family: monospace; }
+
+        .item-acoes { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .item-acoes button {
+            padding: 8px 14px; border-radius: 8px; border: 1px solid #ddd; background: white;
+            font-size: 13px; font-weight: bold; cursor: pointer;
+        }
+        .btn-validar { color: #14612c; border-color: #14612c !important; }
+        .btn-validar:hover { background: #e8f6ec; }
+        .btn-rejeitar { color: #a01d1d; border-color: #a01d1d !important; }
+        .btn-rejeitar:hover { background: #fdecec; }
+        .btn-resolver { color: #0056b3; border-color: #0056b3 !important; }
+        .btn-resolver:hover { background: #eef4ff; }
+
+        .vazio { text-align: center; color: #888; padding: 40px 20px; font-style: italic; }
+        .back-link { display: inline-block; margin-top: 25px; color: #666; text-decoration: none; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="curadoria-container">
+        <div class="curadoria-header">
+            <a href="index.html" style="text-decoration: none; font-size: 24px;" aria-label="Voltar ao mapa">⬅️</a>
+            <h1>Curadoria de obstáculos</h1>
+        </div>
+
+        <div class="card-token">
+            <label for="campoToken">Token de curadoria</label>
+            <small>
+                Exigido pela API para validar, rejeitar ou resolver um relato — sem ele, qualquer pessoa
+                poderia inventar uma barreira e desviar a rota de outra pessoa. Fica só nesta aba
+                (sessionStorage): feche-a para esquecê-lo.
+            </small>
+            <div class="linha-token">
+                <input type="password" id="campoToken" placeholder="Cole o token configurado no servidor">
+                <button onclick="salvarToken()">Usar</button>
+            </div>
+            <p id="statusToken" class="status-token"></p>
+        </div>
+
+        <div class="abas">
+            <button class="aba ativa" data-status="PENDENTE" onclick="mudarAba('PENDENTE')">Pendentes</button>
+            <button class="aba" data-status="VALIDADO" onclick="mudarAba('VALIDADO')">Validados</button>
+            <button class="aba" data-status="REJEITADO" onclick="mudarAba('REJEITADO')">Rejeitados</button>
+            <button class="aba" data-status="RESOLVIDO" onclick="mudarAba('RESOLVIDO')">Resolvidos</button>
+        </div>
+
+        <div id="listaObstaculos" class="lista-obstaculos">
+            <p class="vazio">Carregando…</p>
+        </div>
+
+        <a href="index.html" class="back-link">Voltar ao mapa</a>
+    </div>
+
+    <script src="js/texto.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        var abaAtual = 'PENDENTE';
+
+        var ACOES_POR_ABA = {
+            PENDENTE: [
+                { acao: 'VALIDAR', rotulo: '✓ Validar', classe: 'btn-validar' },
+                { acao: 'REJEITAR', rotulo: '✗ Rejeitar', classe: 'btn-rejeitar' }
+            ],
+            VALIDADO: [
+                { acao: 'RESOLVER', rotulo: '✓ Marcar como resolvido', classe: 'btn-resolver' }
+            ],
+            REJEITADO: [],
+            RESOLVIDO: []
+        };
+
+        function statusElemento() {
+            return document.getElementById('statusToken');
+        }
+
+        function atualizarStatusToken() {
+            var token = MobiliTudoConfig.tokenCurador();
+            var el = statusElemento();
+            if (token) {
+                el.textContent = 'Token definido nesta sessão.';
+                el.className = 'status-token ok';
+            } else {
+                el.textContent = 'Sem token: validar, rejeitar ou resolver vai falhar com 401.';
+                el.className = 'status-token ausente';
+            }
+        }
+
+        function salvarToken() {
+            var valor = document.getElementById('campoToken').value.trim();
+            MobiliTudoConfig.definirTokenCurador(valor);
+            document.getElementById('campoToken').value = '';
+            atualizarStatusToken();
+        }
+
+        function mudarAba(status) {
+            abaAtual = status;
+            document.querySelectorAll('.aba').forEach(function (botao) {
+                botao.classList.toggle('ativa', botao.dataset.status === status);
+            });
+            carregarLista();
+        }
+
+        // Escape de HTML: ver js/texto.js. Alias local para não reescrever cada chamada.
+        var escapar = MobiliTudoTexto.escapar;
+
+        function formatarData(iso) {
+            try {
+                return new Date(iso).toLocaleString('pt-BR');
+            } catch (erro) {
+                return iso;
+            }
+        }
+
+        function renderizarItem(obstaculo) {
+            var acoes = (ACOES_POR_ABA[obstaculo.status] || []).map(function (a) {
+                return '<button class="' + a.classe + '" onclick="aplicarAcao(\'' + obstaculo.id + '\', \'' + a.acao + '\')">'
+                    + a.rotulo + '</button>';
+            }).join('');
+
+            return '<div class="item-obstaculo severidade-' + obstaculo.severidade.toLowerCase() + '">'
+                + '<div class="item-topo">'
+                + '<h3>' + escapar(obstaculo.tipoDescricao) + '</h3>'
+                + '<span class="item-meta">reportado por ' + escapar(obstaculo.reportadoPor) + ' em '
+                + formatarData(obstaculo.reportadoEm) + '</span>'
+                + '</div>'
+                + (obstaculo.descricao ? '<p class="item-descricao">' + escapar(obstaculo.descricao) + '</p>' : '')
+                + '<p class="item-coords">' + obstaculo.coords[0].toFixed(5) + ', ' + obstaculo.coords[1].toFixed(5)
+                + (obstaculo.segmentoViaId ? ' · trecho ' + escapar(obstaculo.segmentoViaId) : '') + '</p>'
+                + (acoes ? '<div class="item-acoes">' + acoes + '</div>' : '')
+                + '</div>';
+        }
+
+        function carregarLista() {
+            var container = document.getElementById('listaObstaculos');
+            if (!MobiliTudoApi.configurada()) {
+                container.innerHTML = '<p class="vazio">Configure o endereço da API em Configurações para usar a curadoria.</p>';
+                return;
+            }
+            container.innerHTML = '<p class="vazio">Carregando…</p>';
+
+            MobiliTudoApi.listarObstaculosPorStatus(abaAtual)
+                .then(function (obstaculos) {
+                    if (!obstaculos.length) {
+                        container.innerHTML = '<p class="vazio">Nenhum obstáculo neste status.</p>';
+                        return;
+                    }
+                    container.innerHTML = obstaculos.map(renderizarItem).join('');
+                })
+                .catch(function (erro) {
+                    container.innerHTML = '<p class="vazio">Não foi possível carregar: ' + escapar(erro.message) + '</p>';
+                });
+        }
+
+        function aplicarAcao(id, acao) {
+            var token = MobiliTudoConfig.tokenCurador();
+            MobiliTudoApi.avaliarObstaculo(id, acao, token)
+                .then(function () {
+                    carregarLista();
+                })
+                .catch(function (erro) {
+                    alert(mensagemDeErro(erro));
+                    carregarLista();
+                });
+        }
+
+        var MENSAGENS_POR_STATUS = {
+            401: 'Token de curadoria ausente ou incorreto.',
+            503: 'A curadoria não está configurada neste servidor (falta MOBILITUDO_CURADOR_TOKEN).',
+            409: 'Este obstáculo já não está mais pendente — alguém mais rápido chegou primeiro.'
+        };
+
+        function mensagemDeErro(erro) {
+            return MENSAGENS_POR_STATUS[erro.status] || erro.message;
+        }
+
+        window.addEventListener('load', function () {
+            atualizarStatusToken();
+            carregarLista();
+        });
+    </script>
+</body>
+</html>

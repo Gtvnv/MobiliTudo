@@ -35,6 +35,13 @@ mobilitudo:
   cors:
     # Hosts autorizados a consumir a API a partir do navegador.
     origens: ${MOBILITUDO_CORS_ORIGENS:http://localhost:*,http://127.0.0.1:*}
+  seguranca:
+    # Segredo exigido para validar, rejeitar ou resolver um obstáculo. Sem ele, a
+    # curadoria fica bloqueada (falha fechada) — ver FiltroAutenticacaoCurador.
+    token-curador: ${MOBILITUDO_CURADOR_TOKEN:}
+  rate-limit:
+    # Limite de relatos de obstáculo por IP, para conter abuso sem exigir cadastro.
+    obstaculos-por-hora: ${MOBILITUDO_LIMITE_OBSTACULOS_HORA:20}
 
 management:
   endpoints:

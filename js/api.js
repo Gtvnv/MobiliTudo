@@ -60,10 +60,12 @@
             });
     }
 
-    function enviarJson(caminho, corpo) {
+    function enviarJson(caminho, corpo, cabecalhosExtras) {
         return requisitar(caminho, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            headers: Object.assign(
+                { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                cabecalhosExtras || {}),
             body: JSON.stringify(corpo)
         });
     }
@@ -127,8 +129,31 @@
         return requisitar('/api/v1/obstaculos' + consulta);
     }
 
+    /**
+     * Lista obstáculos por status, para a fila de curadoria.
+     *
+     * Busca uma única página grande (o máximo que a API aceita) em vez de paginar de
+     * verdade: a fila de pendências tende a ser pequena, e um painel de curadoria sem
+     * "carregar mais" é simples o bastante para não precisar de paginação agora. Se a
+     * fila crescer muito, é aqui que entra.
+     */
+    function listarObstaculosPorStatus(status) {
+        return requisitar('/api/v1/obstaculos?status=' + encodeURIComponent(status) + '&tamanho=200');
+    }
+
     function reportarObstaculo(relato) {
         return enviarJson('/api/v1/obstaculos', relato);
+    }
+
+    /**
+     * Valida, rejeita ou resolve um obstáculo. Exige o token de curadoria configurado em
+     * Configurações — sem ele, a API responde 401 ou 503, e o chamador trata o erro como
+     * qualquer outra falha de requisição.
+     */
+    function avaliarObstaculo(id, acao, tokenCurador) {
+        return enviarJson('/api/v1/obstaculos/' + encodeURIComponent(id) + '/validacao',
+            { acao: acao },
+            { 'X-Mobilitudo-Curador-Token': tokenCurador || '' });
     }
 
     function metadados() {
@@ -145,7 +170,9 @@
         listarLocais: listarLocais,
         calcularRota: calcularRota,
         listarObstaculos: listarObstaculos,
+        listarObstaculosPorStatus: listarObstaculosPorStatus,
         reportarObstaculo: reportarObstaculo,
+        avaliarObstaculo: avaliarObstaculo,
         metadados: metadados
     };
 }(window));
