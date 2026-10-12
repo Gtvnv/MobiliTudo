@@ -73,9 +73,22 @@ class ObstaculoController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Reporta uma nova barreira",
-            description = "O relato nasce PENDENTE e só passa a desviar rotas depois de validado.")
+            description = "O relato nasce PENDENTE e só passa a desviar rotas depois de validado. A resposta "
+                    + "traz tokenExclusao uma única vez — guarde-o se quiser remover seu nome do relato "
+                    + "depois (ver POST /{id}/anonimizar); ele não pode ser recuperado se for perdido.")
     ObstaculoDTO reportar(@RequestBody @Valid NovoObstaculoDTO corpo) {
-        return ObstaculoDTO.de(gerenciarObstaculos.reportar(corpo.paraComando()));
+        GerenciarObstaculos.ObstaculoReportado resultado = gerenciarObstaculos.reportar(corpo.paraComando());
+        return ObstaculoDTO.deComToken(resultado.obstaculo(), resultado.tokenExclusao());
+    }
+
+    @PostMapping("/{id}/anonimizar")
+    @Operation(summary = "Remove o nome de quem relatou, mediante o token de exclusão recebido na criação",
+            description = "Autoexclusão de dado pessoal (LGPD art. 18): não exige o token de curadoria, "
+                    + "só a posse do tokenExclusao devolvido no POST original. Token errado, já usado, ou "
+                    + "relato sem token associado respondem 403, sem distinguir qual dos três casos é — "
+                    + "ver docs/privacidade.md.")
+    ObstaculoDTO anonimizar(@PathVariable UUID id, @RequestBody @Valid AnonimizarObstaculoDTO corpo) {
+        return ObstaculoDTO.de(gerenciarObstaculos.anonimizar(id, corpo.tokenExclusao()));
     }
 
     @PostMapping("/{id}/validacao")

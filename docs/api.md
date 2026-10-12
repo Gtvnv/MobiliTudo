@@ -179,6 +179,43 @@ O relato nasce `PENDENTE` e **não** influencia rota alguma. Só passa a desviar
 depois de validado — um relato não conferido não pode bloquear o caminho de outra pessoa.
 Não exige autenticação; está sujeito ao limite de relatos por hora (ver acima).
 
+A resposta traz um campo a mais que nenhuma outra resposta de obstáculo tem:
+
+```json
+{
+  "id": "a1b2c3d4-...",
+  "tipo": "DEGRAU",
+  "status": "PENDENTE",
+  "tokenExclusao": "xY9f2...q7A",
+  "...": "..."
+}
+```
+
+`tokenExclusao` é devolvido **uma única vez**, nesta resposta — não é recuperável
+depois, nem pelo próprio relato (`GET /obstaculos` nunca inclui este campo). Guarde-o se
+quiser remover seu nome do relato mais tarde (ver abaixo). Detalhes de por que isso
+existe em [docs/privacidade.md](privacidade.md).
+
+### `POST /api/v1/obstaculos/{id}/anonimizar`
+
+Autoexclusão de dado pessoal (LGPD art. 18): remove o nome de quem relatou, sem apagar
+o relato em si — a barreira continua no mapa, só deixa de estar associada a um nome.
+**Não** exige o token de curadoria; exige só a posse do `tokenExclusao` devolvido na
+criação.
+
+```http
+POST /api/v1/obstaculos/a1b2c3.../anonimizar
+Content-Type: application/json
+
+{ "tokenExclusao": "xY9f2...q7A" }
+```
+
+O token é de **uso único**: depois de uma anonimização bem-sucedida, o mesmo valor não
+funciona mais. Token errado, já usado, ou relato sem token associado (por exemplo, dados
+semeados direto no banco) respondem todos `403`, sem distinguir qual dos três casos é —
+diferenciar daria a quem está tentando adivinhar um token informação sobre o que
+quase acertou.
+
 ### `POST /api/v1/obstaculos/{id}/validacao`
 
 Exige o cabeçalho `X-Mobilitudo-Curador-Token` (ver **Autenticação da curadoria** acima).

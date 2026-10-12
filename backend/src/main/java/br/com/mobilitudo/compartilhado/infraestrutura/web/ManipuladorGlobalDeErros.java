@@ -1,6 +1,7 @@
 package br.com.mobilitudo.compartilhado.infraestrutura.web;
 
 import br.com.mobilitudo.obstaculos.dominio.modelo.ObstaculoNaoEncontradoException;
+import br.com.mobilitudo.obstaculos.dominio.modelo.TokenDeExclusaoInvalidoException;
 import br.com.mobilitudo.obstaculos.dominio.modelo.TransicaoInvalidaException;
 import br.com.mobilitudo.rotas.dominio.modelo.RotaNaoEncontradaException;
 import org.springframework.http.HttpStatus;
@@ -45,6 +46,18 @@ class ManipuladorGlobalDeErros {
     ProblemDetail transicaoInvalida(TransicaoInvalidaException excecao) {
         ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, excecao.getMessage());
         problema.setTitle("Transição de status não permitida");
+        return problema;
+    }
+
+    /**
+     * 403, não 401: não há esquema de autenticação sendo desafiado aqui, é posse de um
+     * segredo específico daquele relato — mais próximo de "você não tem permissão para
+     * esta ação neste recurso" do que de "autentique-se".
+     */
+    @ExceptionHandler(TokenDeExclusaoInvalidoException.class)
+    ProblemDetail tokenDeExclusaoInvalido(TokenDeExclusaoInvalidoException excecao) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, excecao.getMessage());
+        problema.setTitle("Token de exclusão inválido");
         return problema;
     }
 

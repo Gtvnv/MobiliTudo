@@ -17,6 +17,23 @@
         .btn-voltar-link { display: inline-block; margin-top: 20px; color: #666; text-decoration: none; font-size: 14px; }
         .btn-voltar-link:hover { color: #0056b3; }
         .badge-pg { background: #eef4ff; color: #0056b3; padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: bold; }
+
+        .meus-relatos { text-align: left; margin-top: 20px; }
+        .meus-relatos h3 { font-size: 14px; color: #555; margin-bottom: 4px; }
+        .meus-relatos small { display: block; color: #888; font-size: 11px; margin-bottom: 10px; line-height: 1.4; }
+        .item-relato {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 10px; padding: 10px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px;
+        }
+        .item-relato .descricao-relato { font-size: 13px; color: #333; }
+        .item-relato .descricao-relato small { color: #999; }
+        .item-relato button {
+            flex-shrink: 0; padding: 6px 10px; border-radius: 6px; border: 1px solid #c62828;
+            background: white; color: #c62828; font-size: 11px; font-weight: bold; cursor: pointer;
+        }
+        .item-relato button:hover { background: #fdecec; }
+        .item-relato button:disabled { opacity: 0.5; cursor: default; }
+        .sem-relatos { font-size: 12px; color: #999; font-style: italic; }
     </style>
 </head>
 <body>
@@ -24,7 +41,10 @@
     <div class="container-perfil" id="cardPrincipal">
         </div>
 
+    <script src="js/texto.js"></script>
     <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/meusRelatos.js"></script>
     <script>
         const card = document.getElementById("cardPrincipal");
 
@@ -54,10 +74,81 @@
                         <p><strong>⭐ Salvos:</strong> Litoral Plaza, Palácio das Artes</p>
                     </div>
 
+                    <div class="meus-relatos" id="secaoMeusRelatos"></div>
+
                     <button class="btn-acao btn-secundario" style="margin-top: 20px;" onclick="window.location.href='index.html'">Acessar Mapa</button>
                     <button onclick="sair()" style="background:none; border:none; color:red; cursor:pointer; margin-top:15px; font-size:13px;">Sair da conta</button>
                 `;
+                renderizarMeusRelatos();
             }
+        }
+
+        /**
+         * Lista os obstáculos reportados deste navegador (ver js/meusRelatos.js), cada
+         * um com a opção de remover o próprio nome — autoexclusão de dado pessoal sem
+         * exigir conta, só a posse do token guardado localmente no momento do relato.
+         */
+        function renderizarMeusRelatos() {
+            const secao = document.getElementById("secaoMeusRelatos");
+            if (!secao) {
+                return;
+            }
+            const relatos = MobiliTudoMeusRelatos.listar();
+
+            if (relatos.length === 0) {
+                secao.innerHTML = `
+                    <h3>📍 Meus relatos</h3>
+                    <p class="sem-relatos">Nenhum obstáculo reportado neste navegador ainda.</p>
+                `;
+                return;
+            }
+
+            const itens = relatos.map(r => `
+                <div class="item-relato" data-id="${MobiliTudoTexto.escapar(r.id)}">
+                    <span class="descricao-relato">
+                        ${MobiliTudoTexto.escapar(r.tipoDescricao || "Obstáculo")}<br>
+                        <small>${new Date(r.criadoEm).toLocaleDateString("pt-BR")}</small>
+                    </span>
+                    <button onclick="removerMeuNomeDoRelato('${MobiliTudoTexto.escapar(r.id)}')">Remover meu nome</button>
+                </div>
+            `).join("");
+
+            secao.innerHTML = `
+                <h3>📍 Meus relatos</h3>
+                <small>Lembrado só neste navegador. Remover seu nome não apaga o relato — a barreira
+                reportada continua ajudando outras pessoas, só deixa de estar associada a você.</small>
+                ${itens}
+            `;
+        }
+
+        function removerMeuNomeDoRelato(obstaculoId) {
+            const relato = MobiliTudoMeusRelatos.listar().find(r => r.id === obstaculoId);
+            if (!relato) {
+                return;
+            }
+            const botao = document.querySelector(`.item-relato[data-id="${CSS.escape(obstaculoId)}"] button`);
+            if (botao) {
+                botao.disabled = true;
+                botao.textContent = "Removendo…";
+            }
+
+            MobiliTudoApi.anonimizarObstaculo(relato.id, relato.tokenExclusao)
+                .then(() => {
+                    MobiliTudoMeusRelatos.remover(obstaculoId);
+                    renderizarMeusRelatos();
+                })
+                .catch(erro => {
+                    // 403 significa token incorreto, já usado, ou relato sem token — em
+                    // qualquer um desses casos tentar de novo não vai funcionar, então
+                    // o item some da lista local mesmo sem sucesso no servidor.
+                    if (erro.status === 403) {
+                        MobiliTudoMeusRelatos.remover(obstaculoId);
+                        alert("Este token de exclusão não é mais válido (provavelmente já foi usado antes).");
+                    } else {
+                        alert("Não foi possível remover agora: " + erro.message + ". Tente de novo mais tarde.");
+                    }
+                    renderizarMeusRelatos();
+                });
         }
 
         function telaCadastro() {

@@ -156,6 +156,16 @@
             { 'X-Mobilitudo-Curador-Token': tokenCurador || '' });
     }
 
+    /**
+     * Remove o nome de quem relatou um obstáculo, usando o token de exclusão devolvido
+     * na criação (ver reportarObstaculo). Não exige token de curadoria — é
+     * autoexclusão de dado pessoal, baseada em posse do token, não em autenticação.
+     */
+    function anonimizarObstaculo(id, tokenExclusao) {
+        return enviarJson('/api/v1/obstaculos/' + encodeURIComponent(id) + '/anonimizar',
+            { tokenExclusao: tokenExclusao });
+    }
+
     function metadados() {
         return requisitar('/api/v1/metadados');
     }
@@ -173,6 +183,7 @@
         listarObstaculosPorStatus: listarObstaculosPorStatus,
         reportarObstaculo: reportarObstaculo,
         avaliarObstaculo: avaliarObstaculo,
+        anonimizarObstaculo: anonimizarObstaculo,
         metadados: metadados
     };
 }(window));

@@ -24,7 +24,7 @@ public final class Obstaculo {
     private final Coordenada coordenada;
     private final String descricao;
     private final String segmentoViaId;
-    private final String reportadoPor;
+    private String reportadoPor;
     private final Instant reportadoEm;
 
     private StatusValidacao status;
@@ -107,6 +107,19 @@ public final class Obstaculo {
 
     public boolean afetaRoteamento() {
         return status.afetaRoteamento();
+    }
+
+    /**
+     * Remove o nome de quem relatou, independentemente do status da barreira.
+     *
+     * <p>Autoexclusão de dado pessoal (LGPD art. 18) é um direito sobre a identidade de
+     * quem relatou, não sobre a informação de acessibilidade do local — por isso isto
+     * apaga só o nome, nunca o relato inteiro: a rampa continua faltando mesmo depois
+     * que ninguém mais sabe quem avisou disso. Idempotente: chamar de novo sobre um
+     * relato já anônimo não muda nada.</p>
+     */
+    public void anonimizar() {
+        this.reportadoPor = "anônimo";
     }
 
     private void exigirPendente(StatusValidacao pretendido) {

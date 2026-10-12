@@ -84,6 +84,27 @@
         }
         aguardandoCliqueNoMapa = true;
         mensagem('Toque no mapa, sobre a barreira que você quer reportar.', 'info');
+        avisarSobreONomeAnexado();
+    }
+
+    /**
+     * Avisa, antes do envio, que o nome salvo no perfil será anexado publicamente ao
+     * relato — não só depois, quando já é tarde para decidir diferente. Quem não tem
+     * nome salvo não vê aviso algum, porque não há dado pessoal nenhum em jogo.
+     */
+    function avisarSobreONomeAnexado() {
+        var aviso = elemento('avisoNomeRelato');
+        if (!aviso) {
+            return;
+        }
+        var nome = lerNomeDoUsuario();
+        if (nome) {
+            aviso.textContent = 'Este relato será público com o nome "' + nome
+                + '" (salvo no seu Perfil). Você pode removê-lo depois em Perfil → Meus relatos.';
+            aviso.hidden = false;
+        } else {
+            aviso.hidden = true;
+        }
     }
 
     function fecharFormulario() {
@@ -137,11 +158,21 @@
 
         mensagem('Enviando relato...', 'info');
         api.reportarObstaculo(relato)
-            .then(function () {
-                mensagem('Relato enviado. Ele entra na fila de conferência antes de desviar rotas.', 'sucesso');
+            .then(function (criado) {
+                // O nome só vai junto se houver um salvo no perfil; guardar o par
+                // (relato, token) é o que permite remover esse nome depois sem exigir
+                // conta nem pedir para copiar um código à mão.
+                MobiliTudoMeusRelatos.adicionar(criado, criado.tokenExclusao);
+
+                var textoNome = relato.reportadoPor
+                    ? ' Seu nome foi anexado a ele; para removê-lo depois, veja "Meus relatos" no Perfil.'
+                    : '';
+                mensagem('Relato enviado. Ele entra na fila de conferência antes de desviar rotas.'
+                    + textoNome, 'sucesso');
                 elemento('descricaoObstaculo').value = '';
                 carregar(pontoSelecionado);
-                setTimeout(fecharFormulario, 2500);
+                // Mais tempo para ler quando há algo a lembrar sobre o próprio nome.
+                setTimeout(fecharFormulario, relato.reportadoPor ? 6000 : 2500);
             })
             .catch(function (erro) {
                 mensagem('Não foi possível enviar: ' + erro.message, 'alerta');

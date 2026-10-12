@@ -18,9 +18,17 @@ public record ObstaculoDTO(UUID id,
                            String reportadoPor,
                            Instant reportadoEm,
                            String status,
-                           boolean afetaRotas) {
+                           boolean afetaRotas,
+                           @Schema(description = "Token de exclusão do nome do relator — só vem preenchido "
+                                   + "na resposta de criação, uma única vez; não é recuperável depois.")
+                           String tokenExclusao) {
 
     public static ObstaculoDTO de(Obstaculo obstaculo) {
+        return deComToken(obstaculo, null);
+    }
+
+    /** Usado só na resposta do relato novo — ver o campo {@link #tokenExclusao}. */
+    public static ObstaculoDTO deComToken(Obstaculo obstaculo, String tokenExclusao) {
         return new ObstaculoDTO(
                 obstaculo.id(),
                 obstaculo.tipo().name(),
@@ -32,6 +40,7 @@ public record ObstaculoDTO(UUID id,
                 obstaculo.reportadoPor(),
                 obstaculo.reportadoEm(),
                 obstaculo.status().name(),
-                obstaculo.afetaRoteamento());
+                obstaculo.afetaRoteamento(),
+                tokenExclusao);
     }
 }

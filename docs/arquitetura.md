@@ -146,6 +146,23 @@ limita relatos por IP numa janela deslizante em memória
 para que o relato continue sem cadastro sem abrir espaço para inundar o mapa ou a fila de
 curadoria.
 
+## Autoexclusão de dado pessoal
+
+O nome de quem relata um obstáculo é o único dado pessoal do projeto, e é público pela
+própria API — por isso quem relata precisa de um jeito de removê-lo sem depender de um
+curador nem de um sistema de contas que o projeto não tem. A solução é um token de
+exclusão de uso único, devolvido **uma vez** na resposta do relato: ver
+[`TokenDeExclusao`](../backend/src/main/java/br/com/mobilitudo/obstaculos/dominio/servico/TokenDeExclusao.java)
+(geração, hash SHA-256 e conferência em tempo constante — tudo JDK puro, sem
+dependência de framework, pelo mesmo motivo de `AvaliadorAcessibilidade` e
+`CalculadoraRotaAcessivel`) e [docs/privacidade.md](privacidade.md) para a motivação
+completa.
+
+O hash fica numa tabela própria (`obstaculo_token_exclusao`), separada da tabela
+`obstaculo`, de propósito: salvar uma transição de status (validar, rejeitar, resolver)
+nunca precisa tocar nessa tabela, o que elimina o risco de uma atualização de rotina
+sobrescrever ou apagar o hash por engano.
+
 ## Paginação
 
 [`Paginacao`](../backend/src/main/java/br/com/mobilitudo/compartilhado/dominio/Paginacao.java)
@@ -162,8 +179,8 @@ específico é `PaginacaoTest.paginaDoMeioUsaODeslocamentoCorreto`.
 
 | Camada | O que cobre | Como rodar |
 |---|---|---|
-| Domínio (64 testes) | regras de acessibilidade, A*, ciclo de vida do obstáculo, geodésia, paginação, autenticação da curadoria, limite de taxa | `mvn test` |
-| Integração (15 testes) | migrações Flyway, mapeamento `geometry`, consultas espaciais, rota ponta a ponta, autenticação da curadoria, limite de relatos, paginação | `mvn verify -DskipITs=false` (exige Docker) |
+| Domínio (75 testes) | regras de acessibilidade, A*, ciclo de vida do obstáculo, geodésia, paginação, autenticação da curadoria, limite de taxa, token de exclusão | `mvn test` |
+| Integração (20 testes) | migrações Flyway, mapeamento `geometry`, consultas espaciais, rota ponta a ponta, autenticação da curadoria, limite de relatos, paginação, autoexclusão de dado pessoal | `mvn verify -DskipITs=false` (exige Docker) |
 
 Os testes de integração ficam fora do build padrão porque dependem de Docker. Eles são o
 único lugar que verifica o que um teste unitário não alcança — e foram eles que pegaram,

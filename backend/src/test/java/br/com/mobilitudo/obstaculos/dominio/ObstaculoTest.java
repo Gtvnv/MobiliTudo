@@ -85,6 +85,44 @@ class ObstaculoTest {
         assertThat(validado.afetaRoteamento()).isFalse();
     }
 
+    @Test
+    @DisplayName("Anonimizar remove o nome, mas preserva o relato e o status da barreira")
+    void anonimizarRemoveSoONome() {
+        Obstaculo obstaculo = novoRelato();
+        obstaculo.validar();
+
+        obstaculo.anonimizar();
+
+        assertThat(obstaculo.reportadoPor()).isEqualTo("anônimo");
+        assertThat(obstaculo.status()).isEqualTo(StatusValidacao.VALIDADO);
+        assertThat(obstaculo.afetaRoteamento()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Anonimizar não depende do status: funciona pendente, validado, rejeitado ou resolvido")
+    void anonimizarFuncionaEmQualquerStatus() {
+        Obstaculo pendente = novoRelato();
+        pendente.anonimizar();
+        assertThat(pendente.reportadoPor()).isEqualTo("anônimo");
+
+        Obstaculo resolvido = novoRelato();
+        resolvido.validar();
+        resolvido.marcarResolvido();
+        resolvido.anonimizar();
+        assertThat(resolvido.reportadoPor()).isEqualTo("anônimo");
+    }
+
+    @Test
+    @DisplayName("Anonimizar é idempotente: chamar de novo sobre um relato já anônimo não falha")
+    void anonimizarEIdempotente() {
+        Obstaculo obstaculo = novoRelato();
+
+        obstaculo.anonimizar();
+        obstaculo.anonimizar();
+
+        assertThat(obstaculo.reportadoPor()).isEqualTo("anônimo");
+    }
+
     private static Obstaculo novoRelato() {
         return Obstaculo.reportar(TipoObstaculo.OBRA, Severidade.MODERADA,
                 new Coordenada(-23.9925, -46.4085), "Tapume ocupando a calçada",

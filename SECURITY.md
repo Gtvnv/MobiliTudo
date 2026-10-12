@@ -20,8 +20,8 @@ Inclua, na medida do possível:
 
 - o que o problema permite fazer (impacto), não só onde ele está;
 - passos para reproduzir, ou uma prova de conceito;
-- se for um problema de dados pessoais (ver LGPD abaixo), quais dados ficam
-  expostos e para quem.
+- se for um problema de dados pessoais (ver [docs/privacidade.md](docs/privacidade.md)),
+  quais dados ficam expostos e para quem.
 
 ## Expectativa de resposta
 
@@ -50,11 +50,19 @@ Vale saber, ao avaliar se algo é uma vulnerabilidade real aqui:
 - **Dados pessoais**: relatos de obstáculo aceitam um `reportadoPor` em texto
   livre, e tanto locais quanto obstáculos carregam coordenadas geográficas. Uma
   falha que exponha esse vínculo (quem reportou o quê e onde) além do já público
-  pela própria API é tratada como incidente de dado pessoal, não só como bug.
+  pela própria API é tratada como incidente de dado pessoal, não só como bug. Ver
+  [docs/privacidade.md](docs/privacidade.md) para o que é dado público de
+  propósito (o acervo de obstáculos em si) versus o que não deveria vazar.
+- **Token de exclusão de obstáculo** (`POST /obstaculos/{id}/anonimizar`, ver
+  [`TokenDeExclusao`](backend/src/main/java/br/com/mobilitudo/obstaculos/dominio/servico/TokenDeExclusao.java))
+  é a prova de posse que permite a quem relatou remover o próprio nome depois.
+  Só o hash SHA-256 fica no banco; encontrar uma forma de recuperar o texto puro
+  a partir do hash, ou de anonimizar um relato sem o token correto, é
+  vulnerabilidade de severidade alta.
 - **Limite de relatos** (`FiltroLimiteDeObstaculos`) é defesa contra abuso de
   volume, não autenticação — encontrar uma forma de contorná-lo (por IP spoofing,
   por exemplo) é uma vulnerabilidade válida de se reportar, mas de severidade
-  menor que as duas acima.
+  menor que as outras deste item.
 
 ## O que não é escopo de segurança
 

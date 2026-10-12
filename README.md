@@ -11,7 +11,7 @@ rotas que contornam barreiras segundo o perfil de mobilidade de quem caminha.**
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=springboot&logoColor=white)
 ![PostGIS](https://img.shields.io/badge/PostgreSQL%20%2B%20PostGIS-16%20%2F%203.4-336791?logo=postgresql&logoColor=white)
 ![Leaflet](https://img.shields.io/badge/Leaflet-1.9-199900?logo=leaflet&logoColor=white)
-![Testes](https://img.shields.io/badge/testes-114%20passando-brightgreen)
+![Testes](https://img.shields.io/badge/testes-138%20passando-brightgreen)
 
 Projeto de extensão — Engenharia de Software, Faculdade Descomplica.
 Alinhado aos ODS **9** (Indústria, Inovação e Infraestrutura) e **11** (Cidades e
@@ -49,8 +49,10 @@ rota devolvida costuma ser mais longa em metros e mais curta em barreiras.
 - 🗺️ **Dados espaciais reais** — PostgreSQL + PostGIS, índices GiST, consultas por proximidade e recorte de malha
 - 🤝 **Colaborativo com curadoria** — qualquer pessoa reporta uma barreira; só um relato validado chega a desviar rota de alguém
 - 🔒 **Curadoria autenticada e com limite de abuso** — token dedicado para validar/rejeitar/resolver, limite de relatos por hora
+- 🕊️ **Autoexclusão de dado pessoal sem conta** — token de uso único devolvido no relato permite remover seu nome depois, sozinho
+- 📜 **Licença AGPL-3.0** — projeto social, sem cobrar por feature; código sempre aberto, inclusive rodando como serviço
 - 🏗️ **Arquitetura hexagonal** — domínio sem dependência de framework, testável em milissegundos, sem banco
-- ✅ **114 testes automatizados** — 64 de domínio + 15 de integração (PostGIS real via Testcontainers) no backend, 35 no front-end
+- ✅ **138 testes automatizados** — 75 de domínio + 20 de integração (PostGIS real via Testcontainers) no backend, 43 no front-end
 - 🩹 **Resiliente a falha** — sem backend, o mapa continua funcionando com o acervo local; sem o provedor padrão de tiles, troca sozinho
 
 ---
@@ -178,14 +180,14 @@ Detalhes do algoritmo em [docs/arquitetura.md](docs/arquitetura.md).
 
 ```bash
 cd backend
-mvn test                          # 64 testes de domínio, sem banco, segundos
-mvn verify -DskipITs=false        # + 15 testes de integração contra PostGIS real (exige Docker)
+mvn test                          # 75 testes de domínio, sem banco, segundos
+mvn verify -DskipITs=false        # + 20 testes de integração contra PostGIS real (exige Docker)
 ```
 
 ```bash
 cd frontend
 npm install
-npm test                          # 35 testes de js/*.js (config, api, escape de HTML)
+npm test                          # 43 testes de js/*.js (config, api, meus relatos, escape de HTML)
 ```
 
 O domínio é livre de framework, então as regras de acessibilidade e o algoritmo de rota
@@ -202,6 +204,7 @@ contra XSS ao renderizar dado vindo da API.
 
 - [Arquitetura](docs/arquitetura.md) — contextos delimitados, algoritmo de rota, persistência espacial, segurança
 - [API v1](docs/api.md) — endpoints, paginação, autenticação da curadoria e códigos de erro
+- [Privacidade e dados pessoais](docs/privacidade.md) — o que é coletado, por quê, e como remover seu nome de um relato
 - [Erro 403 nos tiles do OpenStreetMap](docs/mapa-tiles.md) — diagnóstico e correção
 
 ---
