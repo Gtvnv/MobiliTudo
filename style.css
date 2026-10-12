@@ -1,0 +1,244 @@
+/* 1. CONFIGURAÇÕES GERAIS */
+body, html {
+    margin: 0; padding: 0;
+    height: 100%; width: 100%;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    overflow: hidden;
+}
+
+#map { height: 100vh; width: 100%; z-index: 1; }
+
+/* 2. BARRA SUPERIOR (BUSCA E FILTROS) */
+.top-bar {
+    position: absolute; top: 10px; left: 0; right: 0;
+    z-index: 1100; display: flex; justify-content: center; align-items: center;
+    pointer-events: none;
+}
+
+.top-bar > * { pointer-events: auto; }
+
+.menu-toggle {
+    position: absolute; left: 10px;
+    background: white; border: 2px solid rgba(0,0,0,0.2); border-radius: 4px;
+    width: 34px; height: 34px; font-size: 20px; cursor: pointer;
+    display: flex; justify-content: center; align-items: center;
+}
+
+.search-bar-wrapper { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+
+.search-container {
+    display: flex; background: white; padding: 5px 15px; border-radius: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2); width: 100%; max-width: 350px; align-items: center;
+}
+
+.search-container input { border: none; outline: none; width: 100%; font-size: 14px; padding: 8px; }
+
+.filter-bar { display: none; gap: 8px; overflow-x: auto; max-width: 450px; padding: 5px; }
+.filter-bar.active { display: flex; animation: slideDown 0.3s ease forwards; }
+
+.filter-chip {
+    background: white; border: 1px solid #ddd; padding: 6px 15px; border-radius: 20px;
+    font-size: 13px; white-space: nowrap; cursor: pointer; transition: 0.3s;
+}
+.filter-chip.selected { background: #0056b3; color: white; border-color: #0056b3; }
+
+/* 3. SIDEBAR (MENU LATERAL COMPLETO) */
+.sidebar {
+    height: 100%; 
+    width: 0; 
+    position: fixed; 
+    z-index: 1200;
+    top: 0; 
+    left: 0; 
+    background: white; 
+    transition: 0.3s ease;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.2); 
+    display: flex; 
+    flex-direction: column;
+    
+    /* A SOLUÇÃO ESTÁ AQUI */
+    overflow: hidden !important; 
+}
+
+.sidebar-header {
+    padding: 20px; background: #0056b3; color: white;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-shrink: 0;
+}
+
+.close-btn { background: none; border: none; color: white; font-size: 30px; cursor: pointer; }
+
+/* Área das Fotos (Scrollable) */
+.menu-options {
+    padding: 20px; overflow-y: auto; flex-grow: 1;
+}
+
+.placeholder-text { color: #888; text-align: center; margin-top: 20px; font-style: italic; }
+
+.place-img { width: 100%; border-radius: 8px; cursor: pointer; margin-bottom: 10px; }
+
+.menu-divider { border: 0; border-top: 1px solid #eee; margin: 0; }
+
+/* NOVO MENU DE NAVEGAÇÃO */
+.nav-menu { 
+    background: #fcfcfc; 
+    padding: 10px 0; 
+    flex-shrink: 0;
+    width: 350px; /* Trava a largura interna para os botões não "esmagarem" no fechamento */
+}
+.nav-item {
+    display: flex; align-items: center; width: 100%; padding: 15px 20px;
+    border: none; background: none; text-align: left; font-size: 15px;
+    cursor: pointer; color: #444; border-bottom: 1px solid #f0f0f0; transition: 0.2s;
+}
+
+.nav-item:hover { background: #f0f7ff; color: #0056b3; }
+
+.icon { margin-right: 12px; font-size: 18px; }
+
+/* SUB-MENU DE ACESSIBILIDADE */
+.sub-menu {
+    display: none; background: #f0f0f0; padding: 5px 0 5px 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.sub-menu button {
+    display: flex; align-items: center; width: 100%; padding: 10px 15px;
+    border: none; background: none; font-size: 14px; color: #555; cursor: pointer;
+}
+
+.sub-menu button:hover { color: #0056b3; }
+
+/* 4. LIGHTBOX */
+.lightbox-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0); z-index: -100;
+    display: flex; justify-content: center; align-items: center;
+    opacity: 0; visibility: hidden; transition: 0.4s ease;
+}
+
+.lightbox-overlay.active { opacity: 1; visibility: visible; z-index: 2000; background-color: rgba(0, 0, 0, 0.7); }
+
+.lightbox-container {
+    width: 40%; background: white; padding: 5px; border-radius: 8px;
+    position: relative; transform: scale(0.5); transition: 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.lightbox-overlay.active .lightbox-container { transform: scale(1); }
+
+.lightbox-container img { width: 100%; display: block; border-radius: 4px; }
+
+.close-lightbox {
+    position: absolute; top: -12px; right: -12px; background: white;
+    border: none; border-radius: 50%; width: 32px; height: 32px;
+    cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3); color: #999;
+}
+
+/* 5. TEMAS DE ACESSIBILIDADE */
+.alto-contraste { background: #000 !important; color: #fff !important; }
+.alto-contraste .sidebar, .alto-contraste .nav-menu { background: #000; color: #fff; }
+.alto-contraste .nav-item { color: #fff; border-color: #444; }
+
+.fonte-legivel { font-family: 'OpenSans', sans-serif !important; letter-spacing: 0.5px; }
+
+/* ANIMAÇÕES */
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* RESPONSIVIDADE */
+@media (max-width: 600px) {
+    .sidebar { max-width: 85%; }
+    .lightbox-container { width: 90%; }
+}
+
+.recursos-wrapper {
+    display: flex;
+    justify-content: space-around;
+    margin: 15px 0;
+    gap: 10px;
+}
+
+.recurso-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 11px;
+    color: #0056b3;
+    font-weight: bold;
+}
+
+.recurso-circulo {
+    width: 45px;
+    height: 45px;
+    background: #eef4ff;
+    border: 2px solid #0056b3;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    margin-bottom: 5px;
+    transition: 0.3s;
+}
+
+.recurso-circulo:hover {
+    background: #0056b3;
+    color: white;
+    transform: scale(1.1);
+}
+
+#btn-geoloc {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    width: 50px;
+    height: 50px;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: 0.3s;
+}
+
+#btn-geoloc:hover {
+    background: #f0f0f0;
+    transform: scale(1.1);
+}
+
+.auth-box {
+    text-align: center;
+    padding: 20px;
+}
+
+.btn-auth {
+    display: block;
+    width: 100%;
+    max-width: 250px;
+    margin: 15px auto;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-entrar { background: #eef4ff; color: #0056b3; border: 1px solid #0056b3; }
+.btn-cadastrar { background: #0056b3; color: white; }
+
+.btn-auth:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+
+.input-perfil {
+    width: 100%;
+    max-width: 300px;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}

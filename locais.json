@@ -1,0 +1,34 @@
+[
+    { 
+        "nome": "Litoral Plaza Shopping", 
+        "categoria": "shopping", 
+        "coords": [-23.993, -46.407], 
+        "imagem": "https://fastly.4sqi.net/img/general/600x600/53733052_LwK-9lZJ0E2Z-n7L7_m9uG_mPz7B5_m8Y9Z-n7L7_m9uG.jpg", 
+        "info": "Acesso total, banheiros adaptados amplos e vagas reservadas próximas às entradas.",
+        "recursos": ["Rampas", "Elevador", "Piso Tátil"]
+    },
+    { 
+        "nome": "Praia Acessível - Guilhermina", 
+        "categoria": "praia", 
+        "coords": [-24.015, -46.398], 
+        "imagem": "https://www.praiagrande.sp.gov.br/arquivos/foto/60111.jpg", 
+        "info": "Equipado com cadeiras anfíbias e esteiras de acesso direto à areia.",
+        "recursos": ["Rampas", "Piso Tátil"]
+    },
+    { 
+        "nome": "Palácio das Artes", 
+        "categoria": "cultura", 
+        "coords": [-23.992, -46.411], 
+        "imagem": "https://turismo.praiagrande.sp.gov.br/arquivos/turismo_pontos/2_1.jpg", 
+        "info": "Rampas de acesso, elevadores modernos e assentos reservados para PCD.",
+        "recursos": ["Rampas", "Elevador", "Placas Braille"]
+    },
+    { 
+        "nome": "Terminal Tude Bastos", 
+        "categoria": "transporte", 
+        "coords": [-23.998, -46.415], 
+        "imagem": "https://praiagrande.sp.gov.br/arquivos/foto/42111.jpg", 
+        "info": "Plataformas com elevadores, piso tátil e banheiros adaptados.",
+        "recursos": ["Elevador", "Piso Tátil", "Placas Braille"]
+    }
+]

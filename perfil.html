@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil - MobiliTudo</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container-perfil { background: white; width: 90%; max-width: 450px; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        .profile-pic { width: 100px; height: 100px; border-radius: 50%; border: 3px solid #0056b3; margin-bottom: 15px; }
+        .btn-acao { display: block; width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 16px; }
+        .btn-primario { background: #0056b3; color: white; }
+        .btn-secundario { background: #eef4ff; color: #0056b3; border: 1px solid #0056b3; }
+        .input-campo { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn-voltar-link { display: inline-block; margin-top: 20px; color: #666; text-decoration: none; font-size: 14px; }
+        .btn-voltar-link:hover { color: #0056b3; }
+        .badge-pg { background: #eef4ff; color: #0056b3; padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container-perfil" id="cardPrincipal">
+        </div>
+
+    <script>
+        const card = document.getElementById("cardPrincipal");
+
+        function renderizar() {
+            const nome = localStorage.getItem("nomeUsuario");
+
+            if (!nome) {
+                // TELA INICIAL: LOGIN OU CADASTRO
+                card.innerHTML = `
+                    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" width="80" style="margin-bottom: 20px; opacity: 0.6;">
+                    <h2>Bem-vindo!</h2>
+                    <p style="color: #666;">Crie sua conta para salvar seus locais favoritos em Praia Grande.</p>
+                    <button class="btn-acao btn-primario" onclick="telaCadastro()">Cadastre-se</button>
+                    <button class="btn-acao btn-secundario" onclick="telaLogin()">Já tenho conta</button>
+                    <a href="index.html" class="btn-voltar-link">Voltar ao Mapa</a>
+                `;
+            } else {
+                // TELA DE PERFIL PRONTO
+                const pcd = localStorage.getItem("tipoMobilidade") || "Cadeira de Rodas";
+                card.innerHTML = `
+                    <img src="https://ui-avatars.com/api/?name=${nome}&background=0056b3&color=fff" class="profile-pic">
+                    <h2 style="margin: 5px 0;">${nome}</h2>
+                    <span class="badge-pg">Mapeadora - Praia Grande</span>
+                    
+                    <div style="text-align: left; margin-top: 25px; padding: 15px; background: #f9f9f9; border-radius: 10px;">
+                        <p><strong>♿ Acessibilidade:</strong> ${pcd}</p>
+                        <p><strong>⭐ Salvos:</strong> Litoral Plaza, Palácio das Artes</p>
+                    </div>
+
+                    <button class="btn-acao btn-secundario" style="margin-top: 20px;" onclick="window.location.href='index.html'">Acessar Mapa</button>
+                    <button onclick="sair()" style="background:none; border:none; color:red; cursor:pointer; margin-top:15px; font-size:13px;">Sair da conta</button>
+                `;
+            }
+        }
+
+        function telaCadastro() {
+            card.innerHTML = `
+                <h2>Criar Conta</h2>
+                <input type="text" id="nomeIn" class="input-campo" placeholder="Nome Completo">
+                <input type="text" id="pcdIn" class="input-campo" placeholder="Necessidade (ex: Cadeira de Rodas)">
+                <button class="btn-acao btn-primario" onclick="salvar('cadastro')">Finalizar Cadastro</button>
+                <button class="btn-voltar-link" style="border:none; background:none; cursor:pointer;" onclick="renderizar()">← Voltar</button>
+            `;
+        }
+
+        function telaLogin() {
+            card.innerHTML = `
+                <h2>Entrar</h2>
+                <input type="text" id="nomeIn" class="input-campo" placeholder="Digite seu nome">
+                <button class="btn-acao btn-primario" onclick="salvar('login')">Entrar agora</button>
+                <button class="btn-voltar-link" style="border:none; background:none; cursor:pointer;" onclick="renderizar()">← Voltar</button>
+            `;
+        }
+
+     function salvar(tipo) {
+    const nome = document.getElementById("nomeIn").value;
+    // Esta linha mágica verifica se tem APENAS letras (maiúsculas, minúsculas e com acento) e espaços
+    const apenasLetras = /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/;
+
+    if (!nome) {
+        return alert("Por favor, digite seu nome!");
+    }
+
+    // Validação do Nome
+    if (!apenasLetras.test(nome)) {
+        return alert("Erro: O campo Nome deve conter apenas letras!");
+    }
+
+    localStorage.setItem("nomeUsuario", nome);
+
+    // Se for cadastro, valida também a necessidade
+    if (tipo === 'cadastro') {
+        const pcd = document.getElementById("pcdIn").value;
+        
+        if (!pcd) {
+            return alert("Por favor, informe sua necessidade!");
+        }
+
+        if (!apenasLetras.test(pcd)) {
+            return alert("Erro: O campo Necessidade deve conter apenas letras!");
+        }
+        
+        localStorage.setItem("tipoMobilidade", pcd);
+    }
+
+    renderizar();
+}
+        function sair() {
+            localStorage.removeItem("nomeUsuario");
+            localStorage.removeItem("tipoMobilidade");
+            renderizar();
+        }
+
+        renderizar(); // Inicia a página
+    </script>
+</body>
+</html>

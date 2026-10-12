@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MobiliTudo - Acessibilidade em Praia Grande</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="light-mode"> <div class="top-bar">
+        <button class="menu-toggle" onclick="toggleMenu()" title="Abrir Menu">☰</button>
+        
+        <div class="search-bar-wrapper">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Buscar em Praia Grande..." onkeyup="if(event.key === 'Enter') buscarLocal()">
+                <button onclick="buscarLocal()" title="Pesquisar">🔍</button>
+                <button onclick="toggleFiltros()" title="Filtros" style="border-left: 1px solid #ddd; padding-left: 10px; margin-left: 5px;">⚡</button>
+            </div>
+            
+            <div id="filterBar" class="filter-bar">
+                <button class="filter-chip selected" onclick="filtrarPor('todos')">Todos</button>
+                <button class="filter-chip" onclick="filtrarPor('shopping')">Shoppings</button>
+                <button class="filter-chip" onclick="filtrarPor('praia')">Praias</button>
+                <button class="filter-chip" onclick="filtrarPor('transporte')">Terminais</button>
+                <button class="filter-chip" onclick="filtrarPor('cultura')">Cultura</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="sideMenu" class="sidebar">
+        <div class="sidebar-header">
+            <h2>MobiliTudo</h2>
+            <button class="close-btn" onclick="toggleMenu()">×</button>
+        </div>
+        
+        <div id="placeDetails" class="menu-options">
+            <p class="placeholder-text">Clique em um ponto no mapa para explorar a acessibilidade.</p>
+        </div>
+
+        <hr class="menu-divider">
+
+        <nav class="nav-menu">
+            <button class="nav-item" onclick="window.location.href='perfil.html'">
+                <span class="icon">👤</span> Perfil
+            </button>
+
+            <button class="nav-item" onclick="window.location.href='config.html'">
+                <span class="icon">⚙️</span> Configurações
+            </button>
+
+            <button class="nav-item" onclick="toggleSubMenu('acessibilidadeSub')">
+                <span class="icon">♿</span> Acessibilidade
+            </button>
+            <div id="acessibilidadeSub" class="sub-menu">
+                <button onclick="ativarLeitor()"><span class="icon">🔊</span> Leitor de Texto</button>
+                <button onclick="toggleContraste()"><span class="icon">🌗</span> Alto Contraste</button>
+                <button onclick="toggleFonteLegivel()"><span class="icon">🔤</span> Fonte Legível</button>
+                <button onclick="ativarVoz()"><span class="icon">🎤</span> Comando de Voz</button>
+            </div>
+
+            <button class="nav-item" onclick="window.location.href='sobre.html'">
+                <span class="icon">ℹ️</span> Sobre o Projeto
+            </button>
+        </nav>
+    </div>
+
+    <div id="map"></div>
+
+    <div id="lightboxOverlay" class="lightbox-overlay" onclick="fecharLightbox(event)">
+        <div class="lightbox-container">
+            <button class="close-lightbox" onclick="fecharLightbox(event)">×</button>
+            <img id="lightboxImg" src="" alt="Imagem Expandida">
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <button id="btn-geoloc" onclick="minhaLocalizacao()" title="Minha Localização">🎯</button>
+    <script src="script.js"></script>
+
+
+</body>
+</html>
