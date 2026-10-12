@@ -2,6 +2,7 @@
   "name": "mobilitudo",
   "private": true,
   "type": "module",
+  "license": "AGPL-3.0-or-later",
   "description": "Mapeamento colaborativo de acessibilidade urbana em Praia Grande (SP).",
   "scripts": {
     "test": "vitest run"

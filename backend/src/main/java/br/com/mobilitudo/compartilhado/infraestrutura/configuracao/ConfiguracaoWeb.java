@@ -45,6 +45,8 @@ class ConfiguracaoWeb implements WebMvcConfigurer {
                         API geoespacial de acessibilidade urbana de Praia Grande: acervo de locais \
                         acessíveis, obstáculos reportados pela comunidade e cálculo de rotas \
                         que contornam barreiras segundo o perfil de mobilidade de quem caminha.""")
-                .license(new License().name("MIT")));
+                .license(new License()
+                        .name("AGPL-3.0-or-later")
+                        .url("https://www.gnu.org/licenses/agpl-3.0.html")));
     }
 }

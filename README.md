@@ -6,6 +6,7 @@
 rotas que contornam barreiras segundo o perfil de mobilidade de quem caminha.**
 
 [![CI](https://github.com/YasKarmem/MobiliTudo/actions/workflows/ci.yml/badge.svg)](https://github.com/YasKarmem/MobiliTudo/actions/workflows/ci.yml)
+[![Licença: AGPL v3](https://img.shields.io/badge/Licença-AGPL%20v3-blue.svg)](LICENSE)
 ![Java](https://img.shields.io/badge/Java-21-orange?logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=springboot&logoColor=white)
 ![PostGIS](https://img.shields.io/badge/PostgreSQL%20%2B%20PostGIS-16%20%2F%203.4-336791?logo=postgresql&logoColor=white)
@@ -202,6 +203,28 @@ contra XSS ao renderizar dado vindo da API.
 - [Arquitetura](docs/arquitetura.md) — contextos delimitados, algoritmo de rota, persistência espacial, segurança
 - [API v1](docs/api.md) — endpoints, paginação, autenticação da curadoria e códigos de erro
 - [Erro 403 nos tiles do OpenStreetMap](docs/mapa-tiles.md) — diagnóstico e correção
+
+---
+
+## Contribuindo
+
+O MobiliTudo é um projeto social: sem fins lucrativos, sem plano de cobrar por
+nenhuma funcionalidade, e o valor dele cresce com quem mapeia uma calçada a mais ou
+confere um obstáculo reportado. Toda contribuição é bem-vinda — veja
+[CONTRIBUTING.md](CONTRIBUTING.md) para o fluxo de PR, convenções de código e como
+rodar os testes antes de abrir um.
+
+Encontrou uma vulnerabilidade de segurança? Veja [SECURITY.md](SECURITY.md) antes
+de abrir uma issue pública.
+
+## Licença
+
+Distribuído sob a [GNU Affero General Public License v3.0 (ou posterior)](LICENSE).
+Em resumo: o código é livre para usar, estudar, modificar e redistribuir — inclusive
+rodando como serviço de rede —, e qualquer modificação distribuída ou oferecida como
+serviço precisa continuar sob a mesma licença. É a cláusula que impede alguém de
+pegar o MobiliTudo, fechar o código e vender de volta sem devolver nada à
+comunidade — coerente com o projeto nunca ter cobrado por uma feature sequer.
 
 ---
 
