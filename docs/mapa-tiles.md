@@ -46,11 +46,11 @@ navegador. A única saída é servir os arquivos por HTTP.
 
 | Correção | Onde |
 |---|---|
-| URL sem `{s}`, atribuição completa com link, `maxZoom: 19` | [`js/config.js`](../js/config.js) |
-| `<meta name="referrer" content="strict-origin-when-cross-origin">` | [`index.html`](../index.html), [`config.html`](../config.html) |
-| Detecção de `file://` antes da primeira requisição, com provedor alternativo e aviso explicando como servir por HTTP | [`js/mapa.js`](../js/mapa.js) |
-| Troca automática de provedor após erros repetidos de tile | [`js/mapa.js`](../js/mapa.js) |
-| Escolha manual do provedor | [`config.html`](../config.html) |
+| URL sem `{s}`, atribuição completa com link, `maxZoom: 19` | [`js/config.js`](../frontend/public/js/config.js) |
+| `<meta name="referrer" content="strict-origin-when-cross-origin">` | [`index.html`](../frontend/public/index.html), [`config.html`](../frontend/public/config.html) |
+| Detecção de `file://` antes da primeira requisição, com provedor alternativo e aviso explicando como servir por HTTP | [`js/mapa.js`](../frontend/public/js/mapa.js) |
+| Troca automática de provedor após erros repetidos de tile | [`js/mapa.js`](../frontend/public/js/mapa.js) |
+| Escolha manual do provedor | [`config.html`](../frontend/public/config.html) |
 | Front servido por nginx, com `Referer` válido | [`docker-compose.yml`](../docker-compose.yml) |
 
 Sobre a `<meta name="referrer">`: os navegadores atuais já usam
@@ -63,9 +63,9 @@ remova o `Referer` sem que ninguém perceba.
 Qualquer uma destas serve a pasta por HTTP:
 
 ```bash
-npx serve .                 # Node
-python -m http.server 8081  # Python
-docker compose up --build   # projeto inteiro: banco, API e mapa
+cd frontend/public && npx serve .                 # Node
+cd frontend/public && python -m http.server 8081   # Python
+docker compose up --build                          # projeto inteiro: banco, API e mapa
 ```
 
 Depois abra `http://localhost:8081` — não `file:///.../index.html`.
@@ -77,7 +77,8 @@ penalizado. Nesse caso:
 
 1. Em **Configurações → Provedor das imagens do mapa**, escolha `CARTO Voyager`.
 2. Para uso contínuo ou publicação, contrate um provedor com chave própria
-   (MapTiler, Thunderforest, Stadia Maps) e aponte o `url` em `js/config.js` para ele.
+   (MapTiler, Thunderforest, Stadia Maps) e aponte o `url` em
+   `frontend/public/js/config.js` para ele.
 
 Os servidores do OpenStreetMap são mantidos por doação e trabalho voluntário. Um projeto
 de extensão cabe folgadamente no uso aceitável; um mapa publicado com tráfego real deve

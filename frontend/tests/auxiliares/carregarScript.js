@@ -10,10 +10,10 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const raizDoProjeto = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+const raizPublica = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../public');
 
 export function carregarScript(caminhoRelativoAJs) {
-    const caminho = path.join(raizDoProjeto, caminhoRelativoAJs);
+    const caminho = path.join(raizPublica, caminhoRelativoAJs);
     const codigo = readFileSync(caminho, 'utf-8');
     // eslint-disable-next-line no-eval
     (0, eval)(codigo);

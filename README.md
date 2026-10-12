@@ -75,6 +75,7 @@ entre a rota mais curta e a rota acessível apareça logo na primeira consulta.
 ### Só o mapa, sem backend
 
 ```bash
+cd frontend/public
 npx serve .                 # ou: python -m http.server 8081
 ```
 
@@ -113,21 +114,36 @@ API em qualquer lugar acessível pela rede.
 
 ## Estrutura
 
+Front e back são dois módulos irmãos, cada um dono do próprio build/tooling — o mesmo
+padrão em ambos:
+
 ```
-index.html  config.html  perfil.html  sobre.html  curadoria.html   mapa (Leaflet, sem build)
-style.css   script.js    locais.json
-js/
-  texto.js         escape de HTML compartilhado (proteção contra XSS)
-  config.js        endereço da API, provedores de tiles e o token de curadoria
-  mapa.js          camada base com tolerância ao 403 do OSM
-  api.js           cliente REST, com degradação para o acervo local
-  rotas.js         painel de rota acessível
-  obstaculos.js    relato colaborativo de barreiras
-tests/frontend/    testes do js/*.js (vitest + jsdom)
-backend/           API Spring Boot + PostgreSQL/PostGIS (arquitetura hexagonal)
-docs/              arquitetura, API, diagnóstico do erro 403 e capturas de tela
+frontend/
+  public/            site estático servível (mapa (Leaflet, sem build), sem o tooling abaixo)
+    index.html  config.html  perfil.html  sobre.html  curadoria.html
+    style.css   script.js    locais.json
+    js/
+      texto.js         escape de HTML compartilhado (proteção contra XSS)
+      config.js        endereço da API, provedores de tiles e o token de curadoria
+      mapa.js          camada base com tolerância ao 403 do OSM
+      api.js           cliente REST, com degradação para o acervo local
+      rotas.js         painel de rota acessível
+      obstaculos.js    relato colaborativo de barreiras
+  tests/               testes de js/*.js (vitest + jsdom)
+  package.json
+
+backend/               API Spring Boot + PostgreSQL/PostGIS (arquitetura hexagonal)
+  src/
+  pom.xml
+  Dockerfile
+
+docs/                  arquitetura, API, diagnóstico do erro 403 e capturas de tela
 docker-compose.yml
 ```
+
+`frontend/public/` é exatamente o que o nginx do `docker compose` serve — `package.json`,
+testes e `node_modules` ficam fora desse diretório de propósito, para não publicar
+tooling de desenvolvimento como parte do site.
 
 ---
 
@@ -166,6 +182,7 @@ mvn verify -DskipITs=false        # + 15 testes de integração contra PostGIS r
 ```
 
 ```bash
+cd frontend
 npm install
 npm test                          # 35 testes de js/*.js (config, api, escape de HTML)
 ```
