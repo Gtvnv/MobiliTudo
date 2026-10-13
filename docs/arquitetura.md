@@ -134,17 +134,38 @@ sem isso, qualquer pessoa que descobrisse o endpoint podia validar uma barreira 
 quem depende dela. Reportar continua aberto de propósito: exigir cadastro para relatar
 afastaria exatamente quem o projeto quer ouvir.
 
-[`FiltroAutenticacaoCurador`](../backend/src/main/java/br/com/mobilitudo/compartilhado/infraestrutura/seguranca/FiltroAutenticacaoCurador.java)
-é um `OncePerRequestFilter` comum comparando um segredo compartilhado
-(`MOBILITUDO_CURADOR_TOKEN`) em tempo constante — não Spring Security completo, que traria
-configuração desproporcional ao problema (um segredo, não um sistema de usuários). Sem o
-token configurado, a curadoria falha fechada (503), nunca aberta por omissão.
+Curadores têm conta própria — e-mail, nome de exibição e senha — no bounded context
+[`curadores`](../backend/src/main/java/br/com/mobilitudo/curadores/), não um segredo
+único compartilhado (`MOBILITUDO_CURADOR_TOKEN`, usado antes de existir conta
+individual). A senha é um hash PBKDF2-HMAC-SHA256 de 210.000 iterações
+([`HashDeSenha`](../backend/src/main/java/br/com/mobilitudo/curadores/dominio/servico/HashDeSenha.java),
+JDK puro, recomendação OWASP 2023); o login devolve um token de sessão opaco — só o hash
+é persistido ([`TokenDeSessao`](../backend/src/main/java/br/com/mobilitudo/curadores/dominio/servico/TokenDeSessao.java))
+— revogável a qualquer momento (logout, desativação da conta), ao contrário de um JWT
+autocontido, que continuaria válido até expirar mesmo nesses casos. Sem conta nenhuma
+cadastrada, [`BootstrapDoPrimeiroCurador`](../backend/src/main/java/br/com/mobilitudo/curadores/infraestrutura/seguranca/BootstrapDoPrimeiroCurador.java)
+cria a primeira a partir de `MOBILITUDO_CURADOR_INICIAL_EMAIL`/`_SENHA`; sem essas
+variáveis definidas, a curadoria fica inacessível — falha fechada, nunca aberta por
+omissão.
 
-[`FiltroLimiteDeObstaculos`](../backend/src/main/java/br/com/mobilitudo/compartilhado/infraestrutura/seguranca/FiltroLimiteDeObstaculos.java)
-limita relatos por IP numa janela deslizante em memória
-([`LimitadorDeTaxa`](../backend/src/main/java/br/com/mobilitudo/compartilhado/infraestrutura/seguranca/LimitadorDeTaxa.java)),
-para que o relato continue sem cadastro sem abrir espaço para inundar o mapa ou a fila de
-curadoria.
+A verificação em si acontece dentro do método do controller
+([`ObstaculoController.avaliar`](../backend/src/main/java/br/com/mobilitudo/obstaculos/infraestrutura/web/ObstaculoController.java)
+chamando [`AutenticarCurador.autenticarPorToken`](../backend/src/main/java/br/com/mobilitudo/curadores/aplicacao/AutenticarCurador.java)),
+não num `Filter` decidindo com base em `getRequestURI()`. Essa escolha é deliberada: um
+filtro vê o texto bruto da URL, e o Spring MVC pode decidir o roteamento de forma
+diferente (parâmetros de matriz, barra dupla, normalização de codificação) — exatamente a
+classe de bug por trás de vários desvios de autorização documentados em frameworks web.
+Chamar a verificação de dentro do controller elimina essa ambiguidade por construção: se
+o código está executando, o Spring MVC já decidiu, pelo próprio roteamento, que a
+requisição casa com aquele endpoint.
+
+Relatos de obstáculo e tentativas de login são limitados por IP numa janela deslizante em
+memória
+([`LimitadorDeTaxa`](../backend/src/main/java/br/com/mobilitudo/compartilhado/infraestrutura/seguranca/LimitadorDeTaxa.java),
+reaproveitado pelos dois contextos) — o relato continua sem exigir cadastro sem abrir
+espaço para inundar o mapa ou a fila de curadoria, e o login é limitado porque, diferente
+de um token de alta entropia, uma senha escolhida por uma pessoa está sujeita a força
+bruta.
 
 ## Autoexclusão de dado pessoal
 

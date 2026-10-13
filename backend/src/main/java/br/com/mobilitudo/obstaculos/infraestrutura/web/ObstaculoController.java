@@ -3,8 +3,9 @@ package br.com.mobilitudo.obstaculos.infraestrutura.web;
 import br.com.mobilitudo.compartilhado.dominio.Coordenada;
 import br.com.mobilitudo.compartilhado.dominio.PaginaDeResultado;
 import br.com.mobilitudo.compartilhado.dominio.Paginacao;
-import br.com.mobilitudo.compartilhado.infraestrutura.seguranca.AutenticadorDeCurador;
 import br.com.mobilitudo.compartilhado.infraestrutura.seguranca.LimitadorDeRelatosDeObstaculo;
+import br.com.mobilitudo.curadores.aplicacao.AutenticarCurador;
+import br.com.mobilitudo.curadores.dominio.modelo.CredenciaisInvalidasException;
 import br.com.mobilitudo.obstaculos.aplicacao.GerenciarObstaculos;
 import br.com.mobilitudo.obstaculos.dominio.modelo.Obstaculo;
 import br.com.mobilitudo.obstaculos.dominio.modelo.StatusValidacao;
@@ -34,14 +35,14 @@ class ObstaculoController {
     private static final double RAIO_PADRAO_METROS = 2_000;
 
     private final GerenciarObstaculos gerenciarObstaculos;
-    private final AutenticadorDeCurador autenticadorDeCurador;
+    private final AutenticarCurador autenticarCurador;
     private final LimitadorDeRelatosDeObstaculo limitadorDeRelatos;
 
     ObstaculoController(GerenciarObstaculos gerenciarObstaculos,
-                        AutenticadorDeCurador autenticadorDeCurador,
+                        AutenticarCurador autenticarCurador,
                         LimitadorDeRelatosDeObstaculo limitadorDeRelatos) {
         this.gerenciarObstaculos = gerenciarObstaculos;
-        this.autenticadorDeCurador = autenticadorDeCurador;
+        this.autenticarCurador = autenticarCurador;
         this.limitadorDeRelatos = limitadorDeRelatos;
     }
 
@@ -104,15 +105,23 @@ class ObstaculoController {
 
     @PostMapping("/{id}/validacao")
     @Operation(summary = "Confere um relato: VALIDAR, REJEITAR ou RESOLVER",
-            description = "Exige o cabeçalho X-Mobilitudo-Curador-Token (ver AutenticadorDeCurador). "
-                    + "Responde 401 sem o token correto, 503 se a curadoria não estiver configurada no "
-                    + "servidor, e 409 quando a transição não é permitida pelo ciclo de vida.")
+            description = "Exige o cabeçalho Authorization: Bearer <token de sessão> (ver AutenticarCurador). "
+                    + "Responde 401 sem uma sessão válida, e 409 quando a transição não é permitida pelo "
+                    + "ciclo de vida.")
     ObstaculoDTO avaliar(@PathVariable UUID id, @RequestBody @Valid AvaliacaoDTO corpo, HttpServletRequest requisicao) {
-        autenticadorDeCurador.exigirTokenValido(requisicao);
+        String emailDoCurador = autenticarCurador.autenticarPorToken(tokenDaRequisicao(requisicao)).email();
         return ObstaculoDTO.de(switch (corpo.acao()) {
-            case VALIDAR -> gerenciarObstaculos.validar(id);
-            case REJEITAR -> gerenciarObstaculos.rejeitar(id);
-            case RESOLVER -> gerenciarObstaculos.marcarResolvido(id);
+            case VALIDAR -> gerenciarObstaculos.validar(id, emailDoCurador);
+            case REJEITAR -> gerenciarObstaculos.rejeitar(id, emailDoCurador);
+            case RESOLVER -> gerenciarObstaculos.marcarResolvido(id, emailDoCurador);
         });
+    }
+
+    private static String tokenDaRequisicao(HttpServletRequest requisicao) {
+        String cabecalho = requisicao.getHeader("Authorization");
+        if (cabecalho == null || !cabecalho.startsWith("Bearer ")) {
+            throw new CredenciaisInvalidasException();
+        }
+        return cabecalho.substring("Bearer ".length()).trim();
     }
 }

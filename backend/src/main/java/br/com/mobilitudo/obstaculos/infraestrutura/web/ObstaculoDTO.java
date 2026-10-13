@@ -19,6 +19,7 @@ public record ObstaculoDTO(UUID id,
                            Instant reportadoEm,
                            String status,
                            boolean afetaRotas,
+                           String avaliadoPorEmail,
                            @Schema(description = "Token de exclusão do nome do relator — só vem preenchido "
                                    + "na resposta de criação, uma única vez; não é recuperável depois.")
                            String tokenExclusao) {
@@ -41,6 +42,7 @@ public record ObstaculoDTO(UUID id,
                 obstaculo.reportadoEm(),
                 obstaculo.status().name(),
                 obstaculo.afetaRoteamento(),
+                obstaculo.avaliadoPorEmail().orElse(null),
                 tokenExclusao);
     }
 }

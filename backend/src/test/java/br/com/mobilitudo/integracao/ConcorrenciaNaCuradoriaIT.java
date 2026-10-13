@@ -1,6 +1,6 @@
 package br.com.mobilitudo.integracao;
 
-import br.com.mobilitudo.compartilhado.infraestrutura.seguranca.AutenticadorDeCurador;
+import br.com.mobilitudo.curadores.infraestrutura.web.LoginRespostaDTO;
 import br.com.mobilitudo.obstaculos.infraestrutura.web.ObstaculoDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -47,7 +47,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ConcorrenciaNaCuradoriaIT {
 
-    private static final String TOKEN_DE_TESTE = "segredo-de-teste-para-concorrencia";
+    private static final String EMAIL_DE_TESTE = "curadora-de-teste@mobilitudo.org";
+    private static final String SENHA_DE_TESTE = "senha-de-teste-123";
 
     @Container
     @SuppressWarnings("resource")
@@ -62,7 +63,8 @@ class ConcorrenciaNaCuradoriaIT {
         registro.add("spring.datasource.url", POSTGIS::getJdbcUrl);
         registro.add("spring.datasource.username", POSTGIS::getUsername);
         registro.add("spring.datasource.password", POSTGIS::getPassword);
-        registro.add("mobilitudo.seguranca.token-curador", () -> TOKEN_DE_TESTE);
+        registro.add("mobilitudo.seguranca.curador-inicial-email", () -> EMAIL_DE_TESTE);
+        registro.add("mobilitudo.seguranca.curador-inicial-senha", () -> SENHA_DE_TESTE);
         registro.add("mobilitudo.rate-limit.obstaculos-por-hora", () -> 1000);
     }
 
@@ -79,17 +81,18 @@ class ConcorrenciaNaCuradoriaIT {
     @DisplayName("VALIDAR e REJEITAR simultâneos no mesmo obstáculo: exatamente um 200, o outro 409 — nunca os dois 200")
     void duasTransicoesSimultaneasNuncaDevolvemAsDuasComSucesso() throws Exception {
         String obstaculoId = reportarObstaculoDeTeste();
+        String token = tokenDeSessao();
 
         CountDownLatch largada = new CountDownLatch(1);
         ExecutorService executor = Executors.newFixedThreadPool(2);
         try {
             Future<ResponseEntity<Map>> tentativaValidar = executor.submit(() -> {
                 aguardarLargada(largada);
-                return avaliar(obstaculoId, "VALIDAR");
+                return avaliar(obstaculoId, "VALIDAR", token);
             });
             Future<ResponseEntity<Map>> tentativaRejeitar = executor.submit(() -> {
                 aguardarLargada(largada);
-                return avaliar(obstaculoId, "REJEITAR");
+                return avaliar(obstaculoId, "REJEITAR", token);
             });
 
             largada.countDown();
@@ -146,9 +149,15 @@ class ConcorrenciaNaCuradoriaIT {
         return criado.id().toString();
     }
 
-    private ResponseEntity<Map> avaliar(String id, String acao) {
+    private String tokenDeSessao() {
+        ResponseEntity<LoginRespostaDTO> resposta = http.postForEntity("/api/v1/curadores/login",
+                Map.of("email", EMAIL_DE_TESTE, "senha", SENHA_DE_TESTE), LoginRespostaDTO.class);
+        return resposta.getBody().token();
+    }
+
+    private ResponseEntity<Map> avaliar(String id, String acao, String token) {
         HttpHeaders cabecalhos = new HttpHeaders();
-        cabecalhos.add(AutenticadorDeCurador.CABECALHO_TOKEN, TOKEN_DE_TESTE);
+        cabecalhos.add("Authorization", "Bearer " + token);
         return http.exchange("/api/v1/obstaculos/" + id + "/validacao", HttpMethod.POST,
                 new HttpEntity<>(Map.of("acao", acao), cabecalhos), Map.class);
     }

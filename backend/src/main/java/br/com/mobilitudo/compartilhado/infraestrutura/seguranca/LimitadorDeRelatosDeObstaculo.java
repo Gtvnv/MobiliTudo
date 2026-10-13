@@ -10,14 +10,15 @@ import java.time.Duration;
  * Limita quantos relatos de obstáculo uma mesma origem pode enviar por hora.
  *
  * <p>Protege só {@code POST /api/v1/obstaculos} (o relato em si). Listar continua sem
- * limite — é leitura — e a curadoria já exige token, então não precisa deste limite por
- * cima.</p>
+ * limite — é leitura — e a curadoria já exige sessão de curador autenticado, então não
+ * precisa deste limite por cima.</p>
  *
  * <p>Chamado diretamente de dentro do controller, pelo mesmo raciocínio documentado em
- * {@link AutenticadorDeCurador}: um filtro decidindo a partir de {@code getRequestURI()}
- * pode divergir de como o Spring MVC realmente roteou a requisição. Aqui a consequência
- * de uma divergência seria menor (abuso de volume, não um desvio de autorização
- * completo), mas o conserto é igualmente barato e evita manter duas fontes de verdade.</p>
+ * {@code br.com.mobilitudo.curadores.aplicacao.AutenticarCurador}: um filtro decidindo a
+ * partir de {@code getRequestURI()} pode divergir de como o Spring MVC realmente roteou a
+ * requisição. Aqui a consequência de uma divergência seria menor (abuso de volume, não um
+ * desvio de autorização completo), mas o conserto é igualmente barato e evita manter duas
+ * fontes de verdade.</p>
  *
  * <p>A chave de limite é {@link HttpServletRequest#getRemoteAddr()}, o endereço TCP de
  * quem conectou direto. Atrás de um proxy reverso que não preserve ou declare o IP

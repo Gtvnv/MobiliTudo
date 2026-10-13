@@ -19,17 +19,21 @@
         }
         .card-token label { display: block; font-weight: bold; font-size: 14px; margin-bottom: 6px; }
         .card-token small { display: block; color: #888; font-size: 12px; margin-bottom: 10px; line-height: 1.5; }
-        .linha-token { display: flex; gap: 10px; }
+        .linha-token { display: flex; gap: 10px; flex-wrap: wrap; }
         .linha-token input {
-            flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;
+            flex: 1; min-width: 160px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;
         }
         .linha-token button {
             padding: 10px 18px; border: none; border-radius: 8px; background: #0056b3; color: white;
             font-weight: bold; cursor: pointer;
         }
         .status-token { margin-top: 10px; font-size: 13px; }
-        .status-token.ok { color: #14612c; }
+        .status-token.ok { color: #14612c; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .status-token.ausente { color: #a86400; }
+        .status-token .btn-sair {
+            padding: 4px 10px; border-radius: 6px; border: 1px solid #a01d1d; color: #a01d1d;
+            background: white; font-size: 12px; cursor: pointer;
+        }
 
         .abas { display: flex; gap: 8px; margin-bottom: 15px; }
         .aba {
@@ -77,15 +81,16 @@
         </div>
 
         <div class="card-token">
-            <label for="campoToken">Token de curadoria</label>
+            <label for="campoEmail">Login de curador</label>
             <small>
-                Exigido pela API para validar, rejeitar ou resolver um relato — sem ele, qualquer pessoa
-                poderia inventar uma barreira e desviar a rota de outra pessoa. Fica só nesta aba
-                (sessionStorage): feche-a para esquecê-lo.
+                Exigido pela API para validar, rejeitar ou resolver um relato — sem uma conta, qualquer
+                pessoa poderia inventar uma barreira e desviar a rota de outra pessoa. A sessão fica só
+                nesta aba (sessionStorage): feche-a para encerrá-la, ou use Sair.
             </small>
-            <div class="linha-token">
-                <input type="password" id="campoToken" placeholder="Cole o token configurado no servidor">
-                <button onclick="salvarToken()">Usar</button>
+            <div class="linha-token" id="formularioLogin">
+                <input type="email" id="campoEmail" placeholder="E-mail">
+                <input type="password" id="campoSenha" placeholder="Senha">
+                <button onclick="entrar()">Entrar</button>
             </div>
             <p id="statusToken" class="status-token"></p>
         </div>
@@ -127,22 +132,47 @@
         }
 
         function atualizarStatusToken() {
-            var token = MobiliTudoConfig.tokenCurador();
+            var token = MobiliTudoConfig.tokenDeSessao();
+            var email = MobiliTudoConfig.emailDoCurador();
             var el = statusElemento();
+            var formulario = document.getElementById('formularioLogin');
             if (token) {
-                el.textContent = 'Token definido nesta sessão.';
+                el.innerHTML = 'Conectado como ' + escapar(email || '') + '.'
+                    + ' <button class="btn-sair" onclick="sair()">Sair</button>';
                 el.className = 'status-token ok';
+                formulario.style.display = 'none';
             } else {
-                el.textContent = 'Sem token: validar, rejeitar ou resolver vai falhar com 401.';
+                el.textContent = 'Sem login: validar, rejeitar ou resolver vai falhar com 401.';
                 el.className = 'status-token ausente';
+                formulario.style.display = 'flex';
             }
         }
 
-        function salvarToken() {
-            var valor = document.getElementById('campoToken').value.trim();
-            MobiliTudoConfig.definirTokenCurador(valor);
-            document.getElementById('campoToken').value = '';
-            atualizarStatusToken();
+        function entrar() {
+            var email = document.getElementById('campoEmail').value.trim();
+            var senha = document.getElementById('campoSenha').value;
+            MobiliTudoApi.loginCurador(email, senha)
+                .then(function (resultado) {
+                    MobiliTudoConfig.definirSessaoCurador(resultado.token, resultado.curador.email);
+                    document.getElementById('campoEmail').value = '';
+                    document.getElementById('campoSenha').value = '';
+                    atualizarStatusToken();
+                    carregarLista();
+                })
+                .catch(function (erro) {
+                    alert(mensagemDeErro(erro));
+                });
+        }
+
+        function sair() {
+            var token = MobiliTudoConfig.tokenDeSessao();
+            MobiliTudoApi.logoutCurador(token).catch(function () {
+                /* mesmo se o logout no servidor falhar, a sessão local é encerrada abaixo */
+            }).then(function () {
+                MobiliTudoConfig.limparSessaoCurador();
+                atualizarStatusToken();
+                carregarLista();
+            });
         }
 
         function mudarAba(status) {
@@ -174,7 +204,9 @@
                 + '<div class="item-topo">'
                 + '<h3>' + escapar(obstaculo.tipoDescricao) + '</h3>'
                 + '<span class="item-meta">reportado por ' + escapar(obstaculo.reportadoPor) + ' em '
-                + formatarData(obstaculo.reportadoEm) + '</span>'
+                + formatarData(obstaculo.reportadoEm)
+                + (obstaculo.avaliadoPorEmail ? ' · avaliado por ' + escapar(obstaculo.avaliadoPorEmail) : '')
+                + '</span>'
                 + '</div>'
                 + (obstaculo.descricao ? '<p class="item-descricao">' + escapar(obstaculo.descricao) + '</p>' : '')
                 + '<p class="item-coords">' + obstaculo.coords[0].toFixed(5) + ', ' + obstaculo.coords[1].toFixed(5)
@@ -205,20 +237,24 @@
         }
 
         function aplicarAcao(id, acao) {
-            var token = MobiliTudoConfig.tokenCurador();
+            var token = MobiliTudoConfig.tokenDeSessao();
             MobiliTudoApi.avaliarObstaculo(id, acao, token)
                 .then(function () {
                     carregarLista();
                 })
                 .catch(function (erro) {
                     alert(mensagemDeErro(erro));
+                    if (erro.status === 401) {
+                        MobiliTudoConfig.limparSessaoCurador();
+                        atualizarStatusToken();
+                    }
                     carregarLista();
                 });
         }
 
         var MENSAGENS_POR_STATUS = {
-            401: 'Token de curadoria ausente ou incorreto.',
-            503: 'A curadoria não está configurada neste servidor (falta MOBILITUDO_CURADOR_TOKEN).',
+            401: 'Sessão de curador ausente, expirada ou inválida — faça login de novo.',
+            429: 'Muitas tentativas em pouco tempo. Aguarde e tente novamente.',
             409: 'Este obstáculo já não está mais pendente — alguém mais rápido chegou primeiro.'
         };
 

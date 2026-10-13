@@ -29,6 +29,7 @@ public final class Obstaculo {
 
     private StatusValidacao status;
     private Instant avaliadoEm;
+    private String avaliadoPorEmail;
 
     private Obstaculo(UUID id,
                       TipoObstaculo tipo,
@@ -39,7 +40,8 @@ public final class Obstaculo {
                       String reportadoPor,
                       Instant reportadoEm,
                       StatusValidacao status,
-                      Instant avaliadoEm) {
+                      Instant avaliadoEm,
+                      String avaliadoPorEmail) {
         this.id = id == null ? UUID.randomUUID() : id;
         this.tipo = Objects.requireNonNull(tipo, "tipo do obstaculo e obrigatorio");
         this.severidade = Objects.requireNonNull(severidade, "severidade do obstaculo e obrigatoria");
@@ -50,6 +52,7 @@ public final class Obstaculo {
         this.reportadoEm = reportadoEm == null ? Instant.now() : reportadoEm;
         this.status = status == null ? StatusValidacao.PENDENTE : status;
         this.avaliadoEm = avaliadoEm;
+        this.avaliadoPorEmail = avaliadoPorEmail;
     }
 
     /** Novo relato, sempre pendente de conferencia. */
@@ -60,7 +63,7 @@ public final class Obstaculo {
                                      String segmentoViaId,
                                      String reportadoPor) {
         return new Obstaculo(null, tipo, severidade, coordenada, descricao, segmentoViaId,
-                reportadoPor, Instant.now(), StatusValidacao.PENDENTE, null);
+                reportadoPor, Instant.now(), StatusValidacao.PENDENTE, null, null);
     }
 
     /** Reidrata o agregado a partir do banco, sem passar pelas regras de transicao. */
@@ -73,21 +76,24 @@ public final class Obstaculo {
                                          String reportadoPor,
                                          Instant reportadoEm,
                                          StatusValidacao status,
-                                         Instant avaliadoEm) {
+                                         Instant avaliadoEm,
+                                         String avaliadoPorEmail) {
         return new Obstaculo(id, tipo, severidade, coordenada, descricao, segmentoViaId,
-                reportadoPor, reportadoEm, status, avaliadoEm);
+                reportadoPor, reportadoEm, status, avaliadoEm, avaliadoPorEmail);
     }
 
-    public void validar() {
+    public void validar(String emailDoCurador) {
         exigirPendente(StatusValidacao.VALIDADO);
         this.status = StatusValidacao.VALIDADO;
         this.avaliadoEm = Instant.now();
+        this.avaliadoPorEmail = emailDoCurador;
     }
 
-    public void rejeitar() {
+    public void rejeitar(String emailDoCurador) {
         exigirPendente(StatusValidacao.REJEITADO);
         this.status = StatusValidacao.REJEITADO;
         this.avaliadoEm = Instant.now();
+        this.avaliadoPorEmail = emailDoCurador;
     }
 
     /**
@@ -97,12 +103,13 @@ public final class Obstaculo {
      * validado antes. Resolver um relato rejeitado seria afirmar que a cidade consertou
      * algo que nunca esteve la.</p>
      */
-    public void marcarResolvido() {
+    public void marcarResolvido(String emailDoCurador) {
         if (status != StatusValidacao.VALIDADO) {
             throw new TransicaoInvalidaException(status, StatusValidacao.RESOLVIDO);
         }
         this.status = StatusValidacao.RESOLVIDO;
         this.avaliadoEm = Instant.now();
+        this.avaliadoPorEmail = emailDoCurador;
     }
 
     public boolean afetaRoteamento() {
@@ -166,6 +173,11 @@ public final class Obstaculo {
 
     public Optional<Instant> avaliadoEm() {
         return Optional.ofNullable(avaliadoEm);
+    }
+
+    /** E-mail de quem validou, rejeitou ou resolveu — vazio para relatos ainda pendentes. */
+    public Optional<String> avaliadoPorEmail() {
+        return Optional.ofNullable(avaliadoPorEmail);
     }
 
     @Override

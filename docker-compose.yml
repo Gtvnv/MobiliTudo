@@ -44,11 +44,13 @@ services:
       MOBILITUDO_DB_USER: mobilitudo
       MOBILITUDO_DB_PASSWORD: mobilitudo
       MOBILITUDO_CORS_ORIGENS: "http://localhost:8081,http://127.0.0.1:8081"
-      # Segredo da curadoria de obstáculos (ver FiltroAutenticacaoCurador). Este valor
-      # serve só para subir o projeto localmente — troque-o (ou melhor, defina via
-      # variável de ambiente do host, sem editar este arquivo) antes de publicar a API
-      # em qualquer lugar acessível pela rede.
-      MOBILITUDO_CURADOR_TOKEN: ${MOBILITUDO_CURADOR_TOKEN:-dev-apenas-nao-use-em-producao}
+      # Cria a primeira conta de curador no boot, se não houver nenhuma ainda (ver
+      # BootstrapDoPrimeiroCurador) — depois disso, novas contas se cadastram logadas,
+      # pela própria API. Estes valores servem só para subir o projeto localmente —
+      # troque-os (ou melhor, defina-os via variável de ambiente do host, sem editar
+      # este arquivo) antes de publicar a API em qualquer lugar acessível pela rede.
+      MOBILITUDO_CURADOR_INICIAL_EMAIL: ${MOBILITUDO_CURADOR_INICIAL_EMAIL:-curadoria@mobilitudo.local}
+      MOBILITUDO_CURADOR_INICIAL_SENHA: ${MOBILITUDO_CURADOR_INICIAL_SENHA:-dev-apenas-nao-use-em-producao}
     ports:
       - "8080:8080"
 

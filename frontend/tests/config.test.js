@@ -94,30 +94,34 @@ describe('abertoComoArquivoLocal', () => {
     });
 });
 
-describe('token de curadoria', () => {
-    test('sem token definido, a leitura devolve null', () => {
-        expect(window.MobiliTudoConfig.tokenCurador()).toBeNull();
+describe('sessão de curador', () => {
+    test('sem sessão definida, a leitura devolve null', () => {
+        expect(window.MobiliTudoConfig.tokenDeSessao()).toBeNull();
+        expect(window.MobiliTudoConfig.emailDoCurador()).toBeNull();
     });
 
-    test('token definido é lido de volta', () => {
-        window.MobiliTudoConfig.definirTokenCurador('segredo-123');
-        expect(window.MobiliTudoConfig.tokenCurador()).toBe('segredo-123');
+    test('sessão definida é lida de volta', () => {
+        window.MobiliTudoConfig.definirSessaoCurador('token-123', 'curadora@mobilitudo.org');
+
+        expect(window.MobiliTudoConfig.tokenDeSessao()).toBe('token-123');
+        expect(window.MobiliTudoConfig.emailDoCurador()).toBe('curadora@mobilitudo.org');
     });
 
-    test('token fica em sessionStorage, não em localStorage', () => {
+    test('sessão fica em sessionStorage, não em localStorage', () => {
         // É a diferença deliberada em relação às outras preferências: não deve
         // sobreviver ao fechar a aba num computador compartilhado.
-        window.MobiliTudoConfig.definirTokenCurador('segredo-123');
+        window.MobiliTudoConfig.definirSessaoCurador('token-123', 'curadora@mobilitudo.org');
 
-        expect(window.sessionStorage.getItem('mobilitudo.tokenCurador')).toBe('segredo-123');
-        expect(window.localStorage.getItem('mobilitudo.tokenCurador')).toBeNull();
+        expect(window.sessionStorage.getItem('mobilitudo.sessaoCurador.token')).toBe('token-123');
+        expect(window.localStorage.getItem('mobilitudo.sessaoCurador.token')).toBeNull();
     });
 
-    test('definir com valor vazio remove o token salvo', () => {
-        window.MobiliTudoConfig.definirTokenCurador('segredo-123');
-        window.MobiliTudoConfig.definirTokenCurador('');
+    test('limparSessaoCurador remove o token e o e-mail salvos', () => {
+        window.MobiliTudoConfig.definirSessaoCurador('token-123', 'curadora@mobilitudo.org');
+        window.MobiliTudoConfig.limparSessaoCurador();
 
-        expect(window.MobiliTudoConfig.tokenCurador()).toBeNull();
+        expect(window.MobiliTudoConfig.tokenDeSessao()).toBeNull();
+        expect(window.MobiliTudoConfig.emailDoCurador()).toBeNull();
     });
 });
 

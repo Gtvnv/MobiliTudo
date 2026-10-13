@@ -39,14 +39,15 @@ problema. Depois da correção publicada, relatos relevantes podem ser creditado
 
 Vale saber, ao avaliar se algo é uma vulnerabilidade real aqui:
 
-- **Curadoria de obstáculos** (`POST /api/v1/obstaculos/{id}/validacao`) é o único
-  endpoint autenticado hoje, por um segredo compartilhado
-  (`MOBILITUDO_CURADOR_TOKEN`), não por conta de usuário individual — ver
-  [`FiltroAutenticacaoCurador`](backend/src/main/java/br/com/mobilitudo/compartilhado/infraestrutura/seguranca/FiltroAutenticacaoCurador.java).
-  Um token vazado permite validar obstáculos falsos (desviando rotas de verdade) ou
-  resolver obstáculos reais (apagando-os do mapa). Se um token de produção vazar,
-  é uma vulnerabilidade de severidade alta — reporte por aqui, e troque o valor de
-  `MOBILITUDO_CURADOR_TOKEN` imediatamente.
+- **Curadoria de obstáculos** (`POST /api/v1/obstaculos/{id}/validacao`) exige
+  conta individual de curador (e-mail + senha, ver
+  [`curadores`](backend/src/main/java/br/com/mobilitudo/curadores/)), autenticada
+  por token de sessão enviado como `Authorization: Bearer <token>`. A senha é
+  hash PBKDF2-HMAC-SHA256 (210.000 iterações); o token de sessão é opaco e
+  revogável (logout, desativação de conta), com só o hash persistido. Uma conta
+  comprometida permite validar obstáculos falsos (desviando rotas de verdade) ou
+  resolver obstáculos reais (apagando-os do mapa) — reporte por aqui, e desative
+  a conta (`POST /curadores/{id}/desativar`) imediatamente.
 - **Dados pessoais**: relatos de obstáculo aceitam um `reportadoPor` em texto
   livre, e tanto locais quanto obstáculos carregam coordenadas geográficas. Uma
   falha que exponha esse vínculo (quem reportou o quê e onde) além do já público
@@ -59,8 +60,10 @@ Vale saber, ao avaliar se algo é uma vulnerabilidade real aqui:
   Só o hash SHA-256 fica no banco; encontrar uma forma de recuperar o texto puro
   a partir do hash, ou de anonimizar um relato sem o token correto, é
   vulnerabilidade de severidade alta.
-- **Limite de relatos** (`FiltroLimiteDeObstaculos`) é defesa contra abuso de
-  volume, não autenticação — encontrar uma forma de contorná-lo (por IP spoofing,
+- **Limite de relatos e de login**
+  ([`LimitadorDeTaxa`](backend/src/main/java/br/com/mobilitudo/compartilhado/infraestrutura/seguranca/LimitadorDeTaxa.java))
+  é defesa contra abuso de volume e contra força bruta de senha, não o mecanismo
+  de autenticação em si — encontrar uma forma de contorná-lo (por IP spoofing,
   por exemplo) é uma vulnerabilidade válida de se reportar, mas de severidade
   menor que as outras deste item.
 

@@ -14,6 +14,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ObstaculoTest {
 
+    private static final String EMAIL_DO_CURADOR = "curadora@mobilitudo.org";
+
     @Test
     @DisplayName("Relato novo nasce pendente e ainda nao desvia rota de ninguem")
     void relatoNasceSemEfeitoSobreRotas() {
@@ -38,11 +40,12 @@ class ObstaculoTest {
     void validarHabilitaOEfeitoSobreRotas() {
         Obstaculo obstaculo = novoRelato();
 
-        obstaculo.validar();
+        obstaculo.validar(EMAIL_DO_CURADOR);
 
         assertThat(obstaculo.status()).isEqualTo(StatusValidacao.VALIDADO);
         assertThat(obstaculo.afetaRoteamento()).isTrue();
         assertThat(obstaculo.avaliadoEm()).isPresent();
+        assertThat(obstaculo.avaliadoPorEmail()).contains(EMAIL_DO_CURADOR);
     }
 
     @Test
@@ -50,7 +53,7 @@ class ObstaculoTest {
     void rejeitarEncerraORelato() {
         Obstaculo obstaculo = novoRelato();
 
-        obstaculo.rejeitar();
+        obstaculo.rejeitar(EMAIL_DO_CURADOR);
 
         assertThat(obstaculo.status()).isEqualTo(StatusValidacao.REJEITADO);
         assertThat(obstaculo.afetaRoteamento()).isFalse();
@@ -61,25 +64,27 @@ class ObstaculoTest {
     @DisplayName("Um relato ja conferido nao volta para a fila de curadoria")
     void naoRevalidaRelatoJaConferido() {
         Obstaculo obstaculo = novoRelato();
-        obstaculo.validar();
+        obstaculo.validar(EMAIL_DO_CURADOR);
 
-        assertThatThrownBy(obstaculo::validar).isInstanceOf(TransicaoInvalidaException.class);
-        assertThatThrownBy(obstaculo::rejeitar).isInstanceOf(TransicaoInvalidaException.class);
+        assertThatThrownBy(() -> obstaculo.validar(EMAIL_DO_CURADOR)).isInstanceOf(TransicaoInvalidaException.class);
+        assertThatThrownBy(() -> obstaculo.rejeitar(EMAIL_DO_CURADOR)).isInstanceOf(TransicaoInvalidaException.class);
     }
 
     @Test
     @DisplayName("So se resolve a barreira que chegou a ser confirmada")
     void resolverExigeValidacaoPrevia() {
         Obstaculo pendente = novoRelato();
-        assertThatThrownBy(pendente::marcarResolvido).isInstanceOf(TransicaoInvalidaException.class);
+        assertThatThrownBy(() -> pendente.marcarResolvido(EMAIL_DO_CURADOR))
+                .isInstanceOf(TransicaoInvalidaException.class);
 
         Obstaculo rejeitado = novoRelato();
-        rejeitado.rejeitar();
-        assertThatThrownBy(rejeitado::marcarResolvido).isInstanceOf(TransicaoInvalidaException.class);
+        rejeitado.rejeitar(EMAIL_DO_CURADOR);
+        assertThatThrownBy(() -> rejeitado.marcarResolvido(EMAIL_DO_CURADOR))
+                .isInstanceOf(TransicaoInvalidaException.class);
 
         Obstaculo validado = novoRelato();
-        validado.validar();
-        validado.marcarResolvido();
+        validado.validar(EMAIL_DO_CURADOR);
+        validado.marcarResolvido(EMAIL_DO_CURADOR);
 
         assertThat(validado.status()).isEqualTo(StatusValidacao.RESOLVIDO);
         assertThat(validado.afetaRoteamento()).isFalse();
@@ -89,7 +94,7 @@ class ObstaculoTest {
     @DisplayName("Anonimizar remove o nome, mas preserva o relato e o status da barreira")
     void anonimizarRemoveSoONome() {
         Obstaculo obstaculo = novoRelato();
-        obstaculo.validar();
+        obstaculo.validar(EMAIL_DO_CURADOR);
 
         obstaculo.anonimizar();
 
@@ -106,8 +111,8 @@ class ObstaculoTest {
         assertThat(pendente.reportadoPor()).isEqualTo("anônimo");
 
         Obstaculo resolvido = novoRelato();
-        resolvido.validar();
-        resolvido.marcarResolvido();
+        resolvido.validar(EMAIL_DO_CURADOR);
+        resolvido.marcarResolvido(EMAIL_DO_CURADOR);
         resolvido.anonimizar();
         assertThat(resolvido.reportadoPor()).isEqualTo("anônimo");
     }

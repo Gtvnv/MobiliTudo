@@ -1,8 +1,11 @@
 package br.com.mobilitudo.compartilhado.infraestrutura.web;
 
-import br.com.mobilitudo.compartilhado.infraestrutura.seguranca.CuradoriaIndisponivelException;
 import br.com.mobilitudo.compartilhado.infraestrutura.seguranca.LimiteDeRelatosExcedidoException;
-import br.com.mobilitudo.compartilhado.infraestrutura.seguranca.TokenDeCuradorInvalidoException;
+import br.com.mobilitudo.curadores.aplicacao.LimiteDeTentativasDeLoginExcedidoException;
+import br.com.mobilitudo.curadores.dominio.modelo.CredenciaisInvalidasException;
+import br.com.mobilitudo.curadores.dominio.modelo.CuradorNaoEncontradoException;
+import br.com.mobilitudo.curadores.dominio.modelo.EmailJaCadastradoException;
+import br.com.mobilitudo.curadores.dominio.modelo.SenhaFracaException;
 import br.com.mobilitudo.obstaculos.dominio.modelo.ObstaculoNaoEncontradoException;
 import br.com.mobilitudo.obstaculos.dominio.modelo.TokenDeExclusaoInvalidoException;
 import br.com.mobilitudo.obstaculos.dominio.modelo.TransicaoInvalidaException;
@@ -69,17 +72,38 @@ class ManipuladorGlobalDeErros {
         return problema;
     }
 
-    @ExceptionHandler(TokenDeCuradorInvalidoException.class)
-    ProblemDetail tokenDeCuradorInvalido(TokenDeCuradorInvalidoException excecao) {
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    ProblemDetail credenciaisInvalidas(CredenciaisInvalidasException excecao) {
         ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, excecao.getMessage());
         problema.setTitle("Acesso de curadoria recusado");
         return problema;
     }
 
-    @ExceptionHandler(CuradoriaIndisponivelException.class)
-    ProblemDetail curadoriaIndisponivel(CuradoriaIndisponivelException excecao) {
-        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, excecao.getMessage());
-        problema.setTitle("Acesso de curadoria recusado");
+    @ExceptionHandler(SenhaFracaException.class)
+    ProblemDetail senhaFraca(SenhaFracaException excecao) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, excecao.getMessage());
+        problema.setTitle("Requisição inválida");
+        return problema;
+    }
+
+    @ExceptionHandler(EmailJaCadastradoException.class)
+    ProblemDetail emailJaCadastrado(EmailJaCadastradoException excecao) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, excecao.getMessage());
+        problema.setTitle("E-mail já cadastrado");
+        return problema;
+    }
+
+    @ExceptionHandler(CuradorNaoEncontradoException.class)
+    ProblemDetail curadorNaoEncontrado(CuradorNaoEncontradoException excecao) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, excecao.getMessage());
+        problema.setTitle("Curador não encontrado");
+        return problema;
+    }
+
+    @ExceptionHandler(LimiteDeTentativasDeLoginExcedidoException.class)
+    ProblemDetail limiteDeTentativasDeLoginExcedido(LimiteDeTentativasDeLoginExcedidoException excecao) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, excecao.getMessage());
+        problema.setTitle("Muitas tentativas de login em pouco tempo");
         return problema;
     }
 

@@ -25,18 +25,21 @@ problema prático; ver a documentação de `ConsultarLocais` no código para o p
 
 ### Autenticação da curadoria
 
-`POST /obstaculos/{id}/validacao` exige o cabeçalho `X-Mobilitudo-Curador-Token`,
-comparado em tempo constante contra o valor configurado em `MOBILITUDO_CURADOR_TOKEN` no
-servidor. Sem o cabeçalho ou com o valor errado, responde `401`; se o servidor não tiver
-`MOBILITUDO_CURADOR_TOKEN` configurado, responde `503` — a curadoria falha fechada, nunca
-aberta por omissão. Reportar um obstáculo (`POST /obstaculos`) continua sem exigir nada:
-é a confirmação que precisa de confiança, não o relato.
+Curadores têm conta própria (e-mail + senha), não um segredo compartilhado. Faça login em
+`POST /curadores/login` para obter um token de sessão, e envie-o em todo endpoint que
+exigir curadoria como `Authorization: Bearer <token>`. Sem o cabeçalho, com um token
+inválido/expirado, ou com a conta desativada, responde `401` — sempre com a mesma
+mensagem genérica, para não revelar qual dos casos é. Reportar um obstáculo
+(`POST /obstaculos`) continua sem exigir nada: é a confirmação que precisa de confiança,
+não o relato. Ver **Curadores** abaixo para o fluxo completo.
 
-### Limite de relatos
+### Limite de relatos e de login
 
 `POST /obstaculos` aceita no máximo `MOBILITUDO_LIMITE_OBSTACULOS_HORA` relatos por hora
-por endereço IP (padrão 20). Acima disso, responde `429 Too Many Requests`. Não afeta
-leitura nem a curadoria.
+por endereço IP (padrão 20). `POST /curadores/login` aceita no máximo
+`MOBILITUDO_LIMITE_LOGIN_HORA` tentativas por hora por IP (padrão 10) — diferente de um
+token de alta entropia, uma senha está sujeita a força bruta. Acima de qualquer um dos
+dois limites, responde `429 Too Many Requests`. Não afeta leitura.
 
 ---
 
@@ -218,11 +221,12 @@ quase acertou.
 
 ### `POST /api/v1/obstaculos/{id}/validacao`
 
-Exige o cabeçalho `X-Mobilitudo-Curador-Token` (ver **Autenticação da curadoria** acima).
+Exige uma sessão de curador válida (ver **Autenticação da curadoria** acima e
+**Curadores** abaixo).
 
 ```http
 POST /api/v1/obstaculos/a1b2c3.../validacao
-X-Mobilitudo-Curador-Token: <token configurado no servidor>
+Authorization: Bearer <token de sessão>
 Content-Type: application/json
 
 { "acao": "VALIDAR" }
@@ -231,8 +235,67 @@ Content-Type: application/json
 Ações: `VALIDAR`, `REJEITAR`, `RESOLVER`. O ciclo de vida é
 `PENDENTE → VALIDADO → RESOLVIDO` ou `PENDENTE → REJEITADO`; qualquer outra transição
 responde `409`. Resolver um relato rejeitado seria afirmar que a cidade consertou algo que
-nunca esteve lá. Sem o token correto, `401`; sem `MOBILITUDO_CURADOR_TOKEN` configurado no
-servidor, `503`.
+nunca esteve lá. Sem uma sessão válida, `401`.
+
+A resposta inclui `avaliadoPorEmail` — o e-mail de quem validou, rejeitou ou resolveu,
+`null` para relatos ainda pendentes. É um retrato de quem avaliou no momento da
+avaliação, não atualizado se a conta mudar de e-mail depois.
+
+---
+
+## Curadores
+
+Conta de curador: e-mail, nome de exibição e senha (mínimo 8 caracteres). Não há papel de
+administrador separado — qualquer curador ativo pode cadastrar ou desativar outro.
+
+### `POST /api/v1/curadores/login`
+
+```json
+{ "email": "curadora@mobilitudo.org", "senha": "..." }
+```
+
+```json
+{
+  "token": "d6_xIkGGID-RO9GezSVKaIC53MgBtDeFBq33_iQhtQs",
+  "expiraEm": "2026-11-12T03:13:19.013427936Z",
+  "curador": { "id": "...", "email": "curadora@mobilitudo.org", "nomeDeExibicao": "...", "ativo": true, "criadoEm": "..." }
+}
+```
+
+`token` é o segredo da sessão: existe em texto puro só nesta resposta (só o hash é
+persistido) e deve ser enviado como `Authorization: Bearer <token>` em todo endpoint
+autenticado. E-mail não cadastrado, senha errada ou conta desativada respondem `401` com a
+mesma mensagem genérica. Acima do limite de tentativas por hora, `429`.
+
+### `POST /api/v1/curadores/logout`
+
+Exige `Authorization: Bearer <token>`. Encerra a sessão — o mesmo token deixa de
+autenticar imediatamente. Idempotente: um token já inválido não gera erro. `204 No
+Content`.
+
+### `GET /api/v1/curadores/me`
+
+Exige `Authorization: Bearer <token>`. Devolve os dados da conta autenticada.
+
+### `GET /api/v1/curadores`
+
+Exige uma sessão válida. Lista todas as contas de curador.
+
+### `POST /api/v1/curadores`
+
+Exige uma sessão válida.
+
+```json
+{ "email": "nova@mobilitudo.org", "nomeDeExibicao": "Nova Curadora", "senha": "senha-nova-123" }
+```
+
+`201` com a conta criada. `409` se o e-mail já estiver cadastrado; `400` para senha com
+menos de 8 caracteres.
+
+### `POST /api/v1/curadores/{id}/desativar`
+
+Exige uma sessão válida. A conta desativada não autentica mais — nem com a senha certa,
+nem por uma sessão já aberta antes da desativação (verificada a cada requisição).
 
 ---
 

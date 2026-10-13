@@ -54,6 +54,9 @@ public class ObstaculoEntidade {
     @Column(name = "avaliado_em")
     private Instant avaliadoEm;
 
+    @Column(name = "avaliado_por_email", length = 255)
+    private String avaliadoPorEmail;
+
     protected ObstaculoEntidade() {
         // exigido pelo JPA
     }
@@ -70,11 +73,12 @@ public class ObstaculoEntidade {
         entidade.reportadoEm = obstaculo.reportadoEm();
         entidade.status = obstaculo.status();
         entidade.avaliadoEm = obstaculo.avaliadoEm().orElse(null);
+        entidade.avaliadoPorEmail = obstaculo.avaliadoPorEmail().orElse(null);
         return entidade;
     }
 
     public Obstaculo paraDominio() {
         return Obstaculo.reconstituir(id, tipo, severidade, Geometrias.coordenada(localizacao),
-                descricao, segmentoViaId, reportadoPor, reportadoEm, status, avaliadoEm);
+                descricao, segmentoViaId, reportadoPor, reportadoEm, status, avaliadoEm, avaliadoPorEmail);
     }
 }

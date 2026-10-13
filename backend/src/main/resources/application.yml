@@ -43,12 +43,17 @@ mobilitudo:
     # Hosts autorizados a consumir a API a partir do navegador.
     origens: ${MOBILITUDO_CORS_ORIGENS:http://localhost:*,http://127.0.0.1:*}
   seguranca:
-    # Segredo exigido para validar, rejeitar ou resolver um obstáculo. Sem ele, a
-    # curadoria fica bloqueada (falha fechada) — ver AutenticadorDeCurador.
-    token-curador: ${MOBILITUDO_CURADOR_TOKEN:}
+    # Cria o primeiro curador no boot, se a tabela de curadores estiver vazia — sem
+    # isso, ninguém consegue logar para cadastrar o primeiro. Ver BootstrapDoPrimeiroCurador.
+    curador-inicial-email: ${MOBILITUDO_CURADOR_INICIAL_EMAIL:}
+    curador-inicial-senha: ${MOBILITUDO_CURADOR_INICIAL_SENHA:}
+    # Validade da sessão de login de um curador.
+    sessao-curador-dias: ${MOBILITUDO_SESSAO_CURADOR_DIAS:30}
   rate-limit:
     # Limite de relatos de obstáculo por IP, para conter abuso sem exigir cadastro.
     obstaculos-por-hora: ${MOBILITUDO_LIMITE_OBSTACULOS_HORA:20}
+    # Limite de tentativas de login por IP, para conter força bruta de senha.
+    login-tentativas-por-hora: ${MOBILITUDO_LIMITE_LOGIN_HORA:10}
 
 management:
   endpoints:

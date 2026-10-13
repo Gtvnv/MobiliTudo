@@ -70,6 +70,18 @@
         });
     }
 
+    function cabecalhoAutorizacao(tokenDeSessao) {
+        return { 'Authorization': 'Bearer ' + (tokenDeSessao || '') };
+    }
+
+    function postAutenticado(caminho, tokenDeSessao) {
+        return requisitar(caminho, { method: 'POST', headers: cabecalhoAutorizacao(tokenDeSessao) });
+    }
+
+    function getAutenticado(caminho, tokenDeSessao) {
+        return requisitar(caminho, { headers: cabecalhoAutorizacao(tokenDeSessao) });
+    }
+
     /** Converte o locais.json local para o mesmo formato que a API devolve. */
     function normalizarLocalLocal(bruto) {
         return {
@@ -146,19 +158,49 @@
     }
 
     /**
-     * Valida, rejeita ou resolve um obstáculo. Exige o token de curadoria configurado em
-     * Configurações — sem ele, a API responde 401 ou 503, e o chamador trata o erro como
-     * qualquer outra falha de requisição.
+     * Valida, rejeita ou resolve um obstáculo. Exige o token de sessão de um curador
+     * autenticado (ver login) — sem ele, a API responde 401, e o chamador trata o erro
+     * como qualquer outra falha de requisição.
      */
-    function avaliarObstaculo(id, acao, tokenCurador) {
+    function avaliarObstaculo(id, acao, tokenDeSessao) {
         return enviarJson('/api/v1/obstaculos/' + encodeURIComponent(id) + '/validacao',
             { acao: acao },
-            { 'X-Mobilitudo-Curador-Token': tokenCurador || '' });
+            cabecalhoAutorizacao(tokenDeSessao));
+    }
+
+    /** Autentica um curador por e-mail e senha; devolve o token de sessão e os dados da conta. */
+    function loginCurador(email, senha) {
+        return enviarJson('/api/v1/curadores/login', { email: email, senha: senha });
+    }
+
+    /** Encerra a sessão do token enviado. Idempotente: um token já inválido não gera erro. */
+    function logoutCurador(tokenDeSessao) {
+        return postAutenticado('/api/v1/curadores/logout', tokenDeSessao);
+    }
+
+    /** Dados da conta autenticada pelo token de sessão enviado. */
+    function curadorAutenticado(tokenDeSessao) {
+        return getAutenticado('/api/v1/curadores/me', tokenDeSessao);
+    }
+
+    /** Lista todas as contas de curador — exige uma sessão válida. */
+    function listarCuradores(tokenDeSessao) {
+        return getAutenticado('/api/v1/curadores', tokenDeSessao);
+    }
+
+    /** Cadastra uma nova conta de curador — exige uma sessão válida. */
+    function cadastrarCurador(tokenDeSessao, dados) {
+        return enviarJson('/api/v1/curadores', dados, cabecalhoAutorizacao(tokenDeSessao));
+    }
+
+    /** Desativa a conta de curador com o id informado — exige uma sessão válida. */
+    function desativarCurador(tokenDeSessao, id) {
+        return postAutenticado('/api/v1/curadores/' + encodeURIComponent(id) + '/desativar', tokenDeSessao);
     }
 
     /**
      * Remove o nome de quem relatou um obstáculo, usando o token de exclusão devolvido
-     * na criação (ver reportarObstaculo). Não exige token de curadoria — é
+     * na criação (ver reportarObstaculo). Não exige sessão de curador — é
      * autoexclusão de dado pessoal, baseada em posse do token, não em autenticação.
      */
     function anonimizarObstaculo(id, tokenExclusao) {
@@ -184,6 +226,12 @@
         reportarObstaculo: reportarObstaculo,
         avaliarObstaculo: avaliarObstaculo,
         anonimizarObstaculo: anonimizarObstaculo,
+        loginCurador: loginCurador,
+        logoutCurador: logoutCurador,
+        curadorAutenticado: curadorAutenticado,
+        listarCuradores: listarCuradores,
+        cadastrarCurador: cadastrarCurador,
+        desativarCurador: desativarCurador,
         metadados: metadados
     };
 }(window));

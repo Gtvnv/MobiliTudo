@@ -104,14 +104,18 @@ mvn spring-boot:run
 | `MOBILITUDO_DB_USER` / `MOBILITUDO_DB_PASSWORD` | `mobilitudo` |
 | `MOBILITUDO_PORT` | `8080` |
 | `MOBILITUDO_CORS_ORIGENS` | `http://localhost:*,http://127.0.0.1:*` |
-| `MOBILITUDO_CURADOR_TOKEN` | *(vazio — curadoria desativada até ser definido)* |
+| `MOBILITUDO_CURADOR_INICIAL_EMAIL` / `MOBILITUDO_CURADOR_INICIAL_SENHA` | *(vazios — curadoria inacessível até serem definidos)* |
 | `MOBILITUDO_LIMITE_OBSTACULOS_HORA` | `20` |
+| `MOBILITUDO_LIMITE_LOGIN_HORA` | `10` |
 
-Sem `MOBILITUDO_CURADOR_TOKEN`, a API sobe normalmente, mas validar, rejeitar ou resolver
-um obstáculo responde `503` até a variável ser definida — a curadoria falha fechada, nunca
-aberta por omissão (ver [docs/api.md](docs/api.md)). O `docker compose` já sobe com um
-token de desenvolvimento (`dev-apenas-nao-use-em-producao`); troque-o antes de publicar a
-API em qualquer lugar acessível pela rede.
+Sem `MOBILITUDO_CURADOR_INICIAL_EMAIL`/`_SENHA`, a API sobe normalmente, mas não existe
+nenhuma conta de curador para logar e validar, rejeitar ou resolver um obstáculo — a
+curadoria fica inacessível até a variável ser definida, falha fechada, nunca aberta por
+omissão (ver [docs/api.md](docs/api.md)). Essas variáveis só criam a *primeira* conta, uma
+única vez; contas adicionais se cadastram já autenticadas, pela própria API. O
+`docker compose` já sobe com credenciais de desenvolvimento
+(`curadoria@mobilitudo.local` / `dev-apenas-nao-use-em-producao`); troque-as antes de
+publicar a API em qualquer lugar acessível pela rede.
 
 ---
 
@@ -127,7 +131,7 @@ frontend/
     style.css   script.js    locais.json
     js/
       texto.js         escape de HTML compartilhado (proteção contra XSS)
-      config.js        endereço da API, provedores de tiles e o token de curadoria
+      config.js        endereço da API, provedores de tiles e a sessão de curador
       mapa.js          camada base com tolerância ao 403 do OSM
       api.js           cliente REST, com degradação para o acervo local
       rotas.js         painel de rota acessível
@@ -168,8 +172,8 @@ parâmetros baseados na ABNT NBR 9050:2020 (faixa livre de 1,20 m, rampa de até
 
 Obstáculos reportados pela comunidade só influenciam rotas **depois de validados**: um
 relato não conferido não pode bloquear o caminho de outra pessoa. Validar, rejeitar ou
-resolver um relato é feito na página **Curadoria de obstáculos** do mapa e exige o token
-configurado em `MOBILITUDO_CURADOR_TOKEN` — sem isso, qualquer pessoa poderia inventar uma
+resolver um relato é feito na página **Curadoria de obstáculos** do mapa, com login de
+conta de curador (e-mail + senha) — sem isso, qualquer pessoa poderia inventar uma
 barreira e desviar a rota de outra pessoa, ou apagar uma barreira real do mapa.
 
 Detalhes do algoritmo em [docs/arquitetura.md](docs/arquitetura.md).
@@ -180,8 +184,8 @@ Detalhes do algoritmo em [docs/arquitetura.md](docs/arquitetura.md).
 
 ```bash
 cd backend
-mvn test                          # 75 testes de domínio, sem banco, segundos
-mvn verify -DskipITs=false        # + 20 testes de integração contra PostGIS real (exige Docker)
+mvn test                          # 86 testes de domínio, sem banco, segundos
+mvn verify -DskipITs=false        # + 34 testes de integração contra PostGIS real (exige Docker)
 ```
 
 ```bash

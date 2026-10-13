@@ -152,7 +152,7 @@ describe('calcularRota', () => {
 });
 
 describe('avaliarObstaculo', () => {
-    test('envia o token de curadoria no cabeçalho esperado pelo backend', async () => {
+    test('envia o token de sessão no cabeçalho Authorization: Bearer', async () => {
         var fetchFalso = vi.fn().mockResolvedValue(respostaFake(200, { status: 'VALIDADO' }));
         vi.stubGlobal('fetch', fetchFalso);
 
@@ -160,22 +160,94 @@ describe('avaliarObstaculo', () => {
 
         var chamada = fetchFalso.mock.calls[0];
         expect(chamada[0]).toBe('http://localhost:8080/api/v1/obstaculos/id-123/validacao');
-        expect(chamada[1].headers['X-Mobilitudo-Curador-Token']).toBe('meu-token-secreto');
+        expect(chamada[1].headers['Authorization']).toBe('Bearer meu-token-secreto');
         expect(JSON.parse(chamada[1].body)).toEqual({ acao: 'VALIDAR' });
     });
 
-    test('sem token, envia o cabeçalho vazio em vez de omiti-lo', async () => {
-        // O backend trata ausência e vazio da mesma forma (401), mas enviar o
+    test('sem token, envia "Bearer " vazio em vez de omitir o cabeçalho', async () => {
+        // O backend trata ausência e token vazio da mesma forma (401), mas enviar o
         // cabeçalho vazio em vez de não enviar deixa explícito, do lado do cliente,
-        // que a chamada sabe que precisa de um token e simplesmente não tem um —
+        // que a chamada sabe que precisa de uma sessão e simplesmente não tem uma —
         // útil para quem for depurar pela aba de rede do navegador.
-        var fetchFalso = vi.fn().mockResolvedValue(respostaFake(401, { detail: 'sem token' }));
+        var fetchFalso = vi.fn().mockResolvedValue(respostaFake(401, { detail: 'sem sessão' }));
         vi.stubGlobal('fetch', fetchFalso);
 
         await window.MobiliTudoApi.avaliarObstaculo('id-123', 'VALIDAR', null).catch(function () {});
 
         var chamada = fetchFalso.mock.calls[0];
-        expect(chamada[1].headers['X-Mobilitudo-Curador-Token']).toBe('');
+        expect(chamada[1].headers['Authorization']).toBe('Bearer ');
+    });
+});
+
+describe('loginCurador', () => {
+    test('envia e-mail e senha no corpo, sem exigir sessão prévia', async () => {
+        var fetchFalso = vi.fn().mockResolvedValue(respostaFake(200,
+            { token: 'token-de-sessao', curador: { email: 'curadora@mobilitudo.org' } }));
+        vi.stubGlobal('fetch', fetchFalso);
+
+        var resultado = await window.MobiliTudoApi.loginCurador('curadora@mobilitudo.org', 'senha-123');
+
+        var chamada = fetchFalso.mock.calls[0];
+        expect(chamada[0]).toBe('http://localhost:8080/api/v1/curadores/login');
+        expect(JSON.parse(chamada[1].body)).toEqual({ email: 'curadora@mobilitudo.org', senha: 'senha-123' });
+        expect(resultado.token).toBe('token-de-sessao');
+    });
+});
+
+describe('logoutCurador', () => {
+    test('envia o token no cabeçalho Authorization, sem corpo', async () => {
+        var fetchFalso = vi.fn().mockResolvedValue(respostaFake(204, null));
+        vi.stubGlobal('fetch', fetchFalso);
+
+        await window.MobiliTudoApi.logoutCurador('meu-token-secreto');
+
+        var chamada = fetchFalso.mock.calls[0];
+        expect(chamada[0]).toBe('http://localhost:8080/api/v1/curadores/logout');
+        expect(chamada[1].method).toBe('POST');
+        expect(chamada[1].headers['Authorization']).toBe('Bearer meu-token-secreto');
+    });
+});
+
+describe('curadorAutenticado', () => {
+    test('busca /me com o token no cabeçalho Authorization', async () => {
+        var fetchFalso = vi.fn().mockResolvedValue(respostaFake(200, { email: 'curadora@mobilitudo.org' }));
+        vi.stubGlobal('fetch', fetchFalso);
+
+        var curador = await window.MobiliTudoApi.curadorAutenticado('meu-token-secreto');
+
+        var chamada = fetchFalso.mock.calls[0];
+        expect(chamada[0]).toBe('http://localhost:8080/api/v1/curadores/me');
+        expect(chamada[1].headers['Authorization']).toBe('Bearer meu-token-secreto');
+        expect(curador.email).toBe('curadora@mobilitudo.org');
+    });
+});
+
+describe('cadastrarCurador', () => {
+    test('envia os dados da nova conta e o token de quem está cadastrando', async () => {
+        var fetchFalso = vi.fn().mockResolvedValue(respostaFake(201, { email: 'nova@mobilitudo.org' }));
+        vi.stubGlobal('fetch', fetchFalso);
+
+        var dados = { email: 'nova@mobilitudo.org', nomeDeExibicao: 'Nova', senha: 'senha-nova-123' };
+        await window.MobiliTudoApi.cadastrarCurador('meu-token-secreto', dados);
+
+        var chamada = fetchFalso.mock.calls[0];
+        expect(chamada[0]).toBe('http://localhost:8080/api/v1/curadores');
+        expect(chamada[1].headers['Authorization']).toBe('Bearer meu-token-secreto');
+        expect(JSON.parse(chamada[1].body)).toEqual(dados);
+    });
+});
+
+describe('desativarCurador', () => {
+    test('chama o endpoint de desativação com o id no caminho', async () => {
+        var fetchFalso = vi.fn().mockResolvedValue(respostaFake(200, { ativo: false }));
+        vi.stubGlobal('fetch', fetchFalso);
+
+        await window.MobiliTudoApi.desativarCurador('meu-token-secreto', 'id-456');
+
+        var chamada = fetchFalso.mock.calls[0];
+        expect(chamada[0]).toBe('http://localhost:8080/api/v1/curadores/id-456/desativar');
+        expect(chamada[1].method).toBe('POST');
+        expect(chamada[1].headers['Authorization']).toBe('Bearer meu-token-secreto');
     });
 });
 
@@ -200,7 +272,7 @@ describe('reportarObstaculo', () => {
         await window.MobiliTudoApi.reportarObstaculo(relato);
 
         var chamada = fetchFalso.mock.calls[0];
-        expect(chamada[1].headers['X-Mobilitudo-Curador-Token']).toBeUndefined();
+        expect(chamada[1].headers['Authorization']).toBeUndefined();
         expect(JSON.parse(chamada[1].body)).toEqual(relato);
     });
 });

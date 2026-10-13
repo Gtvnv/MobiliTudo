@@ -3,7 +3,7 @@
  * exclusão de cada um —, para que ela consiga remover o próprio nome depois sem
  * precisar copiar e guardar o token em lugar nenhum.
  *
- * Fica em localStorage, não sessionStorage: ao contrário do token de curadoria (um
+ * Fica em localStorage, não sessionStorage: ao contrário da sessão de curador (um
  * segredo de acesso a uma função administrativa), isto é conveniência pessoal — faz
  * sentido sobreviver ao fechar a aba, para "lembrar depois de uma semana que relatei
  * aquele buraco" continuar funcionando.

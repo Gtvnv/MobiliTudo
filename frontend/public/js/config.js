@@ -98,34 +98,54 @@
         return global.location.protocol === 'file:';
     }
 
-    var CHAVE_TOKEN_CURADOR = 'mobilitudo.tokenCurador';
+    var CHAVE_TOKEN_SESSAO = 'mobilitudo.sessaoCurador.token';
+    var CHAVE_EMAIL_CURADOR = 'mobilitudo.sessaoCurador.email';
 
     /**
-     * O token de curadoria fica em sessionStorage, não em localStorage.
+     * A sessão de curador (token de login + e-mail da conta) fica em sessionStorage,
+     * não em localStorage.
      *
-     * É um segredo, ainda que simples: diferente do perfil de mobilidade ou do provedor
-     * de mapa, não deve sobreviver ao fechar a aba num computador que outra pessoa também
-     * usa. sessionStorage soma isso de graça — expira com a aba — sem exigir lógica
-     * própria de expiração aqui.
+     * É um segredo, ainda que de posse temporária: diferente do perfil de mobilidade ou
+     * do provedor de mapa, não deve sobreviver ao fechar a aba num computador que outra
+     * pessoa também usa. sessionStorage soma isso de graça — expira com a aba — sem
+     * exigir lógica própria de expiração aqui.
      */
-    function tokenCurador() {
+    function lerDeSessao(chave) {
         try {
-            return global.sessionStorage.getItem(CHAVE_TOKEN_CURADOR);
+            return global.sessionStorage.getItem(chave);
         } catch (erro) {
             return null;
         }
     }
 
-    function definirTokenCurador(valor) {
+    function gravarEmSessao(chave, valor) {
         try {
             if (valor) {
-                global.sessionStorage.setItem(CHAVE_TOKEN_CURADOR, valor);
+                global.sessionStorage.setItem(chave, valor);
             } else {
-                global.sessionStorage.removeItem(CHAVE_TOKEN_CURADOR);
+                global.sessionStorage.removeItem(chave);
             }
         } catch (erro) {
-            /* sessão privada ou armazenamento bloqueado: o token vale só nesta chamada */
+            /* sessão privada ou armazenamento bloqueado: a sessão vale só nesta chamada */
         }
+    }
+
+    function tokenDeSessao() {
+        return lerDeSessao(CHAVE_TOKEN_SESSAO);
+    }
+
+    function emailDoCurador() {
+        return lerDeSessao(CHAVE_EMAIL_CURADOR);
+    }
+
+    function definirSessaoCurador(token, email) {
+        gravarEmSessao(CHAVE_TOKEN_SESSAO, token);
+        gravarEmSessao(CHAVE_EMAIL_CURADOR, email);
+    }
+
+    function limparSessaoCurador() {
+        gravarEmSessao(CHAVE_TOKEN_SESSAO, null);
+        gravarEmSessao(CHAVE_EMAIL_CURADOR, null);
     }
 
     global.MobiliTudoConfig = {
@@ -141,7 +161,9 @@
         abertoComoArquivoLocal: abertoComoArquivoLocal,
         PERFIL_PADRAO: 'PADRAO',
         chavePerfil: 'mobilitudo.perfil',
-        tokenCurador: tokenCurador,
-        definirTokenCurador: definirTokenCurador
+        tokenDeSessao: tokenDeSessao,
+        emailDoCurador: emailDoCurador,
+        definirSessaoCurador: definirSessaoCurador,
+        limparSessaoCurador: limparSessaoCurador
     };
 }(window));

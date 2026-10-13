@@ -89,18 +89,18 @@ public class GerenciarObstaculos {
     }
 
     @Transactional
-    public Obstaculo validar(UUID id) {
-        return aplicar(id, Obstaculo::validar);
+    public Obstaculo validar(UUID id, String emailDoCurador) {
+        return aplicar(id, obstaculo -> obstaculo.validar(emailDoCurador));
     }
 
     @Transactional
-    public Obstaculo rejeitar(UUID id) {
-        return aplicar(id, Obstaculo::rejeitar);
+    public Obstaculo rejeitar(UUID id, String emailDoCurador) {
+        return aplicar(id, obstaculo -> obstaculo.rejeitar(emailDoCurador));
     }
 
     @Transactional
-    public Obstaculo marcarResolvido(UUID id) {
-        return aplicar(id, Obstaculo::marcarResolvido);
+    public Obstaculo marcarResolvido(UUID id, String emailDoCurador) {
+        return aplicar(id, obstaculo -> obstaculo.marcarResolvido(emailDoCurador));
     }
 
     @Transactional(readOnly = true)
