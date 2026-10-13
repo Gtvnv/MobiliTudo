@@ -33,6 +33,11 @@ class ObstaculoRepositorioPostGis implements RepositorioObstaculos {
     }
 
     @Override
+    public Optional<Obstaculo> porIdParaAtualizar(UUID id) {
+        return jpa.buscarParaAtualizar(id).map(ObstaculoEntidade::paraDominio);
+    }
+
+    @Override
     public List<Obstaculo> porStatus(StatusValidacao status, Paginacao paginacao) {
         return jpa.findAllByStatusOrderByReportadoEmDesc(status, PaginacaoJpa.semOrdenacao(paginacao)).stream()
                 .map(ObstaculoEntidade::paraDominio)

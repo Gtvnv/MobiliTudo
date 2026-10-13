@@ -1,6 +1,6 @@
 package br.com.mobilitudo.integracao;
 
-import br.com.mobilitudo.compartilhado.infraestrutura.seguranca.FiltroAutenticacaoCurador;
+import br.com.mobilitudo.compartilhado.infraestrutura.seguranca.AutenticadorDeCurador;
 import br.com.mobilitudo.obstaculos.infraestrutura.web.AvaliacaoDTO;
 import br.com.mobilitudo.obstaculos.infraestrutura.web.ObstaculoDTO;
 import org.junit.jupiter.api.BeforeEach;
@@ -169,7 +169,7 @@ class CuradoriaEPaginacaoIT {
     private ResponseEntity<Map> avaliar(UUID id, AvaliacaoDTO.Acao acao, String token) {
         HttpHeaders cabecalhos = new HttpHeaders();
         if (token != null) {
-            cabecalhos.add(FiltroAutenticacaoCurador.CABECALHO_TOKEN, token);
+            cabecalhos.add(AutenticadorDeCurador.CABECALHO_TOKEN, token);
         }
         return http.exchange("/api/v1/obstaculos/" + id + "/validacao", HttpMethod.POST,
                 new HttpEntity<>(Map.of("acao", acao.name()), cabecalhos), Map.class);
@@ -177,7 +177,7 @@ class CuradoriaEPaginacaoIT {
 
     private ResponseEntity<ObstaculoDTO> avaliarComoObstaculoDTO(UUID id, AvaliacaoDTO.Acao acao, String token) {
         HttpHeaders cabecalhos = new HttpHeaders();
-        cabecalhos.add(FiltroAutenticacaoCurador.CABECALHO_TOKEN, token);
+        cabecalhos.add(AutenticadorDeCurador.CABECALHO_TOKEN, token);
         return http.exchange("/api/v1/obstaculos/" + id + "/validacao", HttpMethod.POST,
                 new HttpEntity<>(Map.of("acao", acao.name()), cabecalhos), ObstaculoDTO.class);
     }

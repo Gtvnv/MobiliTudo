@@ -29,7 +29,14 @@ spring:
 server:
   port: ${MOBILITUDO_PORT:8080}
   error:
-    include-message: always
+    # "never", não "always": isto só afeta o fallback padrão do Spring Boot, para
+    # exceções que NÃO passam por ManipuladorGlobalDeErros — ali as mensagens são
+    # escritas à mão, pensadas para quem consome a API, e continuam aparecendo
+    # normalmente. "always" vazava a mensagem bruta de qualquer exceção inesperada
+    # (ex.: "Invalid UUID string: ..." do próprio java.util.UUID) para quem chamou a
+    # API — nada catastrófico até aqui, mas é política de vazar por padrão, não a
+    # exceção cuidadosamente decidida caso a caso.
+    include-message: never
 
 mobilitudo:
   cors:
@@ -37,7 +44,7 @@ mobilitudo:
     origens: ${MOBILITUDO_CORS_ORIGENS:http://localhost:*,http://127.0.0.1:*}
   seguranca:
     # Segredo exigido para validar, rejeitar ou resolver um obstáculo. Sem ele, a
-    # curadoria fica bloqueada (falha fechada) — ver FiltroAutenticacaoCurador.
+    # curadoria fica bloqueada (falha fechada) — ver AutenticadorDeCurador.
     token-curador: ${MOBILITUDO_CURADOR_TOKEN:}
   rate-limit:
     # Limite de relatos de obstáculo por IP, para conter abuso sem exigir cadastro.

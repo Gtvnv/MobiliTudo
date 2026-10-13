@@ -76,6 +76,10 @@ public class GerenciarObstaculos {
             throw new TokenDeExclusaoInvalidoException();
         }
 
+        // porId simples, não porIdParaAtualizar: anonimizar é idempotente (já é
+        // "anônimo" ou passa a ser), então duas chamadas concorrentes não têm o
+        // problema de última-escrita-vence-em-silêncio que justifica a trava em
+        // aplicar() — travar aqui só adicionaria contenção sem ganho de correção.
         Obstaculo obstaculo = repositorio.porId(id).orElseThrow(() -> new ObstaculoNaoEncontradoException(id));
         obstaculo.anonimizar();
         Obstaculo salvo = repositorio.salvar(obstaculo);
@@ -109,8 +113,16 @@ public class GerenciarObstaculos {
         return PaginaDeResultado.buscar(paginacao, p -> repositorio.naArea(centro, raioMetros, p));
     }
 
+    /**
+     * {@code porIdParaAtualizar}, não {@code porId}: uma transição de status precisa
+     * travar a linha pelo resto da transação, ou duas requisições simultâneas sobre o
+     * mesmo obstáculo podem cada uma ler PENDENTE, cada uma passar a verificação de
+     * transição em memória, e a segunda a commitar sobrescrever a primeira em silêncio —
+     * ver o porquê completo em {@code RepositorioObstaculos.porIdParaAtualizar}.
+     */
     private Obstaculo aplicar(UUID id, java.util.function.Consumer<Obstaculo> transicao) {
-        Obstaculo obstaculo = repositorio.porId(id).orElseThrow(() -> new ObstaculoNaoEncontradoException(id));
+        Obstaculo obstaculo = repositorio.porIdParaAtualizar(id)
+                .orElseThrow(() -> new ObstaculoNaoEncontradoException(id));
         transicao.accept(obstaculo);
         return repositorio.salvar(obstaculo);
     }

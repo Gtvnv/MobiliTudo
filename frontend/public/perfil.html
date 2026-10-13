@@ -63,14 +63,21 @@
                 `;
             } else {
                 // TELA DE PERFIL PRONTO
+                //
+                // nome vem de localStorage, validado por regex só do lado do cliente
+                // (apenas-letras, em salvar()) — alguém editando localStorage direto
+                // pelo devtools contorna essa validação. Escapar aqui é defesa em
+                // profundidade contra esse self-XSS, e encodeURIComponent evita que um
+                // nome com espaço ou acento quebre a query string da URL do avatar.
                 const pcd = localStorage.getItem("tipoMobilidade") || "Não informado";
+                const nomeSeguro = MobiliTudoTexto.escapar(nome);
                 card.innerHTML = `
-                    <img src="https://ui-avatars.com/api/?name=${nome}&background=0056b3&color=fff" class="profile-pic">
-                    <h2 style="margin: 5px 0;">${nome}</h2>
+                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(nome)}&background=0056b3&color=fff" class="profile-pic">
+                    <h2 style="margin: 5px 0;">${nomeSeguro}</h2>
                     <span class="badge-pg">Mapeadora - Praia Grande</span>
-                    
+
                     <div style="text-align: left; margin-top: 25px; padding: 15px; background: #f9f9f9; border-radius: 10px;">
-                        <p><strong>♿ Acessibilidade:</strong> ${pcd}</p>
+                        <p><strong>♿ Acessibilidade:</strong> ${MobiliTudoTexto.escapar(pcd)}</p>
                         <p><strong>⭐ Salvos:</strong> Litoral Plaza, Palácio das Artes</p>
                     </div>
 

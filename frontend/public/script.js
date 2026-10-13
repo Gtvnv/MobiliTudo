@@ -180,8 +180,10 @@ function mostrarDetalhes(local) {
         + '<p id="detalheTexto">' + escapar(local.info) + '</p>'
         + (local.endereco ? '<p class="endereco">' + escapar(local.endereco) + '</p>' : '')
         + '<hr>'
-        + '<button class="menu-item botao-rota" onclick="tracarRotaPara(' + local.coords[0] + ','
-        + local.coords[1] + ', \'' + escapar(local.nome).replace(/'/g, '') + '\')">'
+        // O nome não é interpolado no onclick: o handler lê o local selecionado
+        // (localSelecionado), o que evita colocar texto arbitrário dentro de um
+        // atributo HTML — ver tracarRotaParaLocalSelecionado().
+        + '<button class="menu-item botao-rota" onclick="tracarRotaParaLocalSelecionado()">'
         + '🧭 Traçar rota acessível</button>'
         + '<button class="menu-item" onclick="window.open(\'https://www.google.com/maps/dir/?api=1&destination='
         + local.coords[0] + ',' + local.coords[1] + '\')">📍 Abrir no Google Maps</button>'

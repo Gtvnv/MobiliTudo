@@ -10,6 +10,7 @@
 
     var api = global.MobiliTudoApi;
     var config = global.MobiliTudoConfig;
+    var texto = global.MobiliTudoTexto;
 
     var CORES = {
         PLENO: '#1a8a3f',
@@ -158,7 +159,7 @@
                     color: CORES[passo.nivelAcessibilidade] || CORES.COM_RESSALVAS,
                     weight: 6,
                     opacity: 0.85
-                }).addTo(camadaRota).bindTooltip(passo.instrucao);
+                }).addTo(camadaRota).bindTooltip(texto.escapar(passo.instrucao));
             }
             inicio = fim;
         });
@@ -171,21 +172,26 @@
         if (!destinoHtml) {
             return;
         }
+        // Todo texto interpolado abaixo vem do backend (nome de via, nível, perfil) e
+        // hoje não é alimentado por entrada pública — mas é escapado de qualquer forma,
+        // como defesa em profundidade: o dia em que um desses campos passar a aceitar
+        // contribuição externa (nome de rua reportado por usuário, por exemplo), o
+        // template já está seguro, sem precisar lembrar de voltar aqui.
         var passos = rota.passos.map(function (passo) {
             var ressalvas = passo.ressalvas.length
                 ? '<ul class="ressalvas">' + passo.ressalvas.map(function (r) {
-                    return '<li>' + r + '</li>';
+                    return '<li>' + texto.escapar(r) + '</li>';
                 }).join('') + '</ul>'
                 : '';
             return '<li class="passo nivel-' + passo.nivelAcessibilidade.toLowerCase() + '">'
-                + '<span class="passo-texto">' + passo.instrucao + '</span>' + ressalvas + '</li>';
+                + '<span class="passo-texto">' + texto.escapar(passo.instrucao) + '</span>' + ressalvas + '</li>';
         }).join('');
 
         destinoHtml.innerHTML =
             '<div class="resumo-rota nivel-' + rota.nivelAcessibilidade.toLowerCase() + '">'
-            + '<strong>' + rota.nivelDescricao + '</strong>'
+            + '<strong>' + texto.escapar(rota.nivelDescricao) + '</strong>'
             + '<span>' + formatarDistancia(rota.distanciaMetros) + ' · '
-            + formatarDuracao(rota.duracaoMinutos) + ' · ' + rota.perfilDescricao + '</span>'
+            + formatarDuracao(rota.duracaoMinutos) + ' · ' + texto.escapar(rota.perfilDescricao) + '</span>'
             + '</div>'
             + '<ol class="passos-rota">' + passos + '</ol>';
         destinoHtml.hidden = false;

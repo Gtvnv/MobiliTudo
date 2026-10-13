@@ -3,11 +3,14 @@ package br.com.mobilitudo.obstaculos.infraestrutura.web;
 import br.com.mobilitudo.compartilhado.dominio.Coordenada;
 import br.com.mobilitudo.compartilhado.dominio.PaginaDeResultado;
 import br.com.mobilitudo.compartilhado.dominio.Paginacao;
+import br.com.mobilitudo.compartilhado.infraestrutura.seguranca.AutenticadorDeCurador;
+import br.com.mobilitudo.compartilhado.infraestrutura.seguranca.LimitadorDeRelatosDeObstaculo;
 import br.com.mobilitudo.obstaculos.aplicacao.GerenciarObstaculos;
 import br.com.mobilitudo.obstaculos.dominio.modelo.Obstaculo;
 import br.com.mobilitudo.obstaculos.dominio.modelo.StatusValidacao;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,9 +34,15 @@ class ObstaculoController {
     private static final double RAIO_PADRAO_METROS = 2_000;
 
     private final GerenciarObstaculos gerenciarObstaculos;
+    private final AutenticadorDeCurador autenticadorDeCurador;
+    private final LimitadorDeRelatosDeObstaculo limitadorDeRelatos;
 
-    ObstaculoController(GerenciarObstaculos gerenciarObstaculos) {
+    ObstaculoController(GerenciarObstaculos gerenciarObstaculos,
+                        AutenticadorDeCurador autenticadorDeCurador,
+                        LimitadorDeRelatosDeObstaculo limitadorDeRelatos) {
         this.gerenciarObstaculos = gerenciarObstaculos;
+        this.autenticadorDeCurador = autenticadorDeCurador;
+        this.limitadorDeRelatos = limitadorDeRelatos;
     }
 
     @GetMapping
@@ -75,8 +84,10 @@ class ObstaculoController {
     @Operation(summary = "Reporta uma nova barreira",
             description = "O relato nasce PENDENTE e só passa a desviar rotas depois de validado. A resposta "
                     + "traz tokenExclusao uma única vez — guarde-o se quiser remover seu nome do relato "
-                    + "depois (ver POST /{id}/anonimizar); ele não pode ser recuperado se for perdido.")
-    ObstaculoDTO reportar(@RequestBody @Valid NovoObstaculoDTO corpo) {
+                    + "depois (ver POST /{id}/anonimizar); ele não pode ser recuperado se for perdido. "
+                    + "Responde 429 acima do limite de relatos por hora da origem.")
+    ObstaculoDTO reportar(@RequestBody @Valid NovoObstaculoDTO corpo, HttpServletRequest requisicao) {
+        limitadorDeRelatos.exigirDentroDoLimite(requisicao);
         GerenciarObstaculos.ObstaculoReportado resultado = gerenciarObstaculos.reportar(corpo.paraComando());
         return ObstaculoDTO.deComToken(resultado.obstaculo(), resultado.tokenExclusao());
     }
@@ -93,10 +104,11 @@ class ObstaculoController {
 
     @PostMapping("/{id}/validacao")
     @Operation(summary = "Confere um relato: VALIDAR, REJEITAR ou RESOLVER",
-            description = "Exige o cabeçalho X-Mobilitudo-Curador-Token (ver FiltroAutenticacaoCurador). "
+            description = "Exige o cabeçalho X-Mobilitudo-Curador-Token (ver AutenticadorDeCurador). "
                     + "Responde 401 sem o token correto, 503 se a curadoria não estiver configurada no "
                     + "servidor, e 409 quando a transição não é permitida pelo ciclo de vida.")
-    ObstaculoDTO avaliar(@PathVariable UUID id, @RequestBody @Valid AvaliacaoDTO corpo) {
+    ObstaculoDTO avaliar(@PathVariable UUID id, @RequestBody @Valid AvaliacaoDTO corpo, HttpServletRequest requisicao) {
+        autenticadorDeCurador.exigirTokenValido(requisicao);
         return ObstaculoDTO.de(switch (corpo.acao()) {
             case VALIDAR -> gerenciarObstaculos.validar(id);
             case REJEITAR -> gerenciarObstaculos.rejeitar(id);

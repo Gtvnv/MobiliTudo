@@ -54,7 +54,7 @@ public final class TokenDeExclusao {
      *
      * <p>{@link MessageDigest#isEqual} evita vazar por timing quantos caracteres do
      * hash calculado coincidem com o armazenado — o mesmo raciocínio usado para o token
-     * de curadoria em {@code FiltroAutenticacaoCurador}.</p>
+     * de curadoria em {@code AutenticadorDeCurador}.</p>
      */
     public static boolean confere(String tokenEmTextoPuro, String hashArmazenado) {
         if (tokenEmTextoPuro == null || hashArmazenado == null) {

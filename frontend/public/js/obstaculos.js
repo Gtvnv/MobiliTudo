@@ -9,6 +9,7 @@
     'use strict';
 
     var api = global.MobiliTudoApi;
+    var texto = global.MobiliTudoTexto;
 
     var CORES = {
         LEVE: '#f1b24a',
@@ -52,8 +53,12 @@
                 fillOpacity: validado ? 0.95 : 0.45,
                 dashArray: validado ? null : '3'
             }).addTo(camada).bindPopup(
-                '<strong>' + obstaculo.tipoDescricao + '</strong><br>'
-                + (obstaculo.descricao ? obstaculo.descricao + '<br>' : '')
+                // descricao é texto livre enviado por qualquer pessoa, sem autenticação
+                // (POST /obstaculos é aberto de propósito) — sem escapar, um relato
+                // malicioso executaria script no navegador de quem visse o popup,
+                // mesmo antes de qualquer curadoria confirmar o relato.
+                '<strong>' + texto.escapar(obstaculo.tipoDescricao) + '</strong><br>'
+                + (obstaculo.descricao ? texto.escapar(obstaculo.descricao) + '<br>' : '')
                 + '<small>' + (validado ? 'Confirmado — já desvia rotas' : 'Aguardando conferência') + '</small>'
             );
         });
@@ -193,7 +198,7 @@
             return;
         }
         selecaoTipo.innerHTML = metadados.tiposDeObstaculo.map(function (tipo) {
-            return '<option value="' + tipo.id + '">' + tipo.rotulo + '</option>';
+            return '<option value="' + texto.escapar(tipo.id) + '">' + texto.escapar(tipo.rotulo) + '</option>';
         }).join('');
     }
 
