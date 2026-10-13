@@ -20,26 +20,28 @@
 
         .meus-relatos { text-align: left; margin-top: 20px; }
         .meus-relatos h3 { font-size: 14px; color: #555; margin-bottom: 4px; }
-        .meus-relatos small { display: block; color: #888; font-size: 11px; margin-bottom: 10px; line-height: 1.4; }
+        .meus-relatos small { display: block; color: #595959; font-size: 11px; margin-bottom: 10px; line-height: 1.4; }
         .item-relato {
             display: flex; justify-content: space-between; align-items: center;
             gap: 10px; padding: 10px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px;
         }
         .item-relato .descricao-relato { font-size: 13px; color: #333; }
-        .item-relato .descricao-relato small { color: #999; }
+        .item-relato .descricao-relato small { color: #595959; }
         .item-relato button {
             flex-shrink: 0; padding: 6px 10px; border-radius: 6px; border: 1px solid #c62828;
             background: white; color: #c62828; font-size: 11px; font-weight: bold; cursor: pointer;
         }
         .item-relato button:hover { background: #fdecec; }
         .item-relato button:disabled { opacity: 0.5; cursor: default; }
-        .sem-relatos { font-size: 12px; color: #999; font-style: italic; }
+        .sem-relatos { font-size: 12px; color: #595959; font-style: italic; }
     </style>
 </head>
 <body>
 
-    <div class="container-perfil" id="cardPrincipal">
-        </div>
+    <main>
+        <h1 class="sr-only">Perfil do usuário</h1>
+        <div class="container-perfil" id="cardPrincipal"></div>
+    </main>
 
     <script src="js/texto.js"></script>
     <script src="js/config.js"></script>
@@ -54,7 +56,7 @@
             if (!nome) {
                 // TELA INICIAL: LOGIN OU CADASTRO
                 card.innerHTML = `
-                    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" width="80" style="margin-bottom: 20px; opacity: 0.6;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" width="80" alt="" style="margin-bottom: 20px; opacity: 0.6;">
                     <h2>Bem-vindo!</h2>
                     <p style="color: #666;">Crie sua conta para salvar seus locais favoritos em Praia Grande.</p>
                     <button class="btn-acao btn-primario" onclick="telaCadastro()">Cadastre-se</button>
@@ -72,7 +74,7 @@
                 const pcd = localStorage.getItem("tipoMobilidade") || "Não informado";
                 const nomeSeguro = MobiliTudoTexto.escapar(nome);
                 card.innerHTML = `
-                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(nome)}&background=0056b3&color=fff" class="profile-pic">
+                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(nome)}&background=0056b3&color=fff" class="profile-pic" alt="Foto de perfil de ${nomeSeguro}">
                     <h2 style="margin: 5px 0;">${nomeSeguro}</h2>
                     <span class="badge-pg">Mapeadora - Praia Grande</span>
 

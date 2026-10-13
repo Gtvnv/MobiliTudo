@@ -19,7 +19,7 @@
         .config-header h1 { margin: 0; font-size: 24px; color: #0056b3; }
 
         .config-section { margin-bottom: 25px; }
-        .config-section h3 { font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .config-section h2 { font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
 
         .config-row {
             display: flex; justify-content: space-between; align-items: center;
@@ -27,11 +27,11 @@
         }
 
         .config-row .rotulo { display: flex; flex-direction: column; gap: 3px; padding-right: 15px; }
-        .config-row .rotulo small { color: #888; font-size: 12px; line-height: 1.4; }
+        .config-row .rotulo small { color: #595959; font-size: 12px; line-height: 1.4; }
 
         .config-campo { display: block; padding: 12px 0; }
         .config-campo label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 14px; }
-        .config-campo small { display: block; color: #888; font-size: 12px; line-height: 1.5; margin-bottom: 8px; }
+        .config-campo small { display: block; color: #595959; font-size: 12px; line-height: 1.5; margin-bottom: 8px; }
         .config-campo input, .config-campo select {
             width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;
             font-size: 14px; box-sizing: border-box;
@@ -66,7 +66,7 @@
 </head>
 <body>
 
-    <div class="config-container">
+    <main class="config-container">
         <div class="config-header">
             <a href="index.html" style="text-decoration: none; font-size: 24px;" aria-label="Voltar ao mapa">⬅️</a>
             <h1>Configurações</h1>
@@ -74,7 +74,7 @@
 
         <div class="config-card">
             <div class="config-section">
-                <h3>♿ Acessibilidade</h3>
+                <h2>♿ Acessibilidade</h2>
                 <div class="config-row">
                     <span class="rotulo">Leitor de tela automático</span>
                     <label class="switch">
@@ -99,7 +99,7 @@
             </div>
 
             <div class="config-section">
-                <h3>🧭 Perfil de mobilidade</h3>
+                <h2>🧭 Perfil de mobilidade</h2>
                 <div class="config-campo">
                     <label for="prefPerfil">Como você se desloca</label>
                     <small>Define quais barreiras bloqueiam a sua rota e como os locais são classificados.</small>
@@ -113,7 +113,7 @@
             </div>
 
             <div class="config-section">
-                <h3>🗺️ Mapa</h3>
+                <h2>🗺️ Mapa</h2>
                 <div class="config-campo">
                     <label for="prefProvedor">Provedor das imagens do mapa</label>
                     <small>
@@ -147,7 +147,7 @@
             <button class="btn-save" onclick="salvarConfig()">Salvar alterações</button>
             <a href="index.html" class="back-link">Cancelar e voltar</a>
         </div>
-    </div>
+    </main>
 
     <script src="js/config.js"></script>
     <script>

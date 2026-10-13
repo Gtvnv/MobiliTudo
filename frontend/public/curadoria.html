@@ -18,7 +18,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 25px;
         }
         .card-token label { display: block; font-weight: bold; font-size: 14px; margin-bottom: 6px; }
-        .card-token small { display: block; color: #888; font-size: 12px; margin-bottom: 10px; line-height: 1.5; }
+        .card-token small { display: block; color: #595959; font-size: 12px; margin-bottom: 10px; line-height: 1.5; }
         .linha-token { display: flex; gap: 10px; flex-wrap: wrap; }
         .linha-token input {
             flex: 1; min-width: 160px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;
@@ -51,10 +51,10 @@
         .item-obstaculo.severidade-leve { border-left-color: #999; }
 
         .item-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-        .item-topo h3 { margin: 0; font-size: 16px; }
-        .item-meta { font-size: 12px; color: #888; }
+        .item-topo h2 { margin: 0; font-size: 16px; }
+        .item-meta { font-size: 12px; color: #595959; }
         .item-descricao { margin: 8px 0; font-size: 14px; color: #555; }
-        .item-coords { font-size: 12px; color: #999; font-family: monospace; }
+        .item-coords { font-size: 12px; color: #595959; font-family: monospace; }
 
         .item-acoes { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
         .item-acoes button {
@@ -68,13 +68,13 @@
         .btn-resolver { color: #0056b3; border-color: #0056b3 !important; }
         .btn-resolver:hover { background: #eef4ff; }
 
-        .vazio { text-align: center; color: #888; padding: 40px 20px; font-style: italic; }
+        .vazio { text-align: center; color: #595959; padding: 40px 20px; font-style: italic; }
         .back-link { display: inline-block; margin-top: 25px; color: #666; text-decoration: none; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <div class="curadoria-container">
+    <main class="curadoria-container">
         <div class="curadoria-header">
             <a href="index.html" style="text-decoration: none; font-size: 24px;" aria-label="Voltar ao mapa">⬅️</a>
             <h1>Curadoria de obstáculos</h1>
@@ -107,7 +107,7 @@
         </div>
 
         <a href="index.html" class="back-link">Voltar ao mapa</a>
-    </div>
+    </main>
 
     <script src="js/texto.js"></script>
     <script src="js/config.js"></script>
@@ -202,7 +202,7 @@
 
             return '<div class="item-obstaculo severidade-' + obstaculo.severidade.toLowerCase() + '">'
                 + '<div class="item-topo">'
-                + '<h3>' + escapar(obstaculo.tipoDescricao) + '</h3>'
+                + '<h2>' + escapar(obstaculo.tipoDescricao) + '</h2>'
                 + '<span class="item-meta">reportado por ' + escapar(obstaculo.reportadoPor) + ' em '
                 + formatarData(obstaculo.reportadoEm)
                 + (obstaculo.avaliadoPorEmail ? ' · avaliado por ' + escapar(obstaculo.avaliadoPorEmail) : '')
