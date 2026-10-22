@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!--
+        Os servidores de tiles do OpenStreetMap recusam requisições sem Referer válido.
+        strict-origin-when-cross-origin envia a origem (sem o caminho) para outros hosts,
+        que é o que a política de uso pede. Ver docs/mapa-tiles.md.
+    -->
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+
+    <title>MobiliTudo - Acessibilidade em Praia Grande</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="light-mode">
+    <header class="top-bar">
+        <h1 class="sr-only">MobiliTudo — mapa de acessibilidade de Praia Grande</h1>
+        <button class="menu-toggle" onclick="toggleMenu()" title="Abrir Menu" aria-label="Abrir menu">☰</button>
+
+        <div class="search-bar-wrapper">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Buscar em Praia Grande..."
+                       aria-label="Buscar local"
+                       onkeyup="if(event.key === 'Enter') buscarLocal()">
+                <button onclick="buscarLocal()" title="Pesquisar" aria-label="Pesquisar">🔍</button>
+                <button onclick="toggleFiltros()" title="Filtros" aria-label="Filtros"
+                        style="border-left: 1px solid #ddd; padding-left: 10px; margin-left: 5px;">⚡</button>
+            </div>
+
+            <div id="filterBar" class="filter-bar">
+                <button class="filter-chip selected" data-categoria="todos" onclick="filtrarPor('todos')">Todos</button>
+                <button class="filter-chip" data-categoria="shopping" onclick="filtrarPor('shopping')">Shoppings</button>
+                <button class="filter-chip" data-categoria="praia" onclick="filtrarPor('praia')">Praias</button>
+                <button class="filter-chip" data-categoria="transporte" onclick="filtrarPor('transporte')">Terminais</button>
+                <button class="filter-chip" data-categoria="cultura" onclick="filtrarPor('cultura')">Cultura</button>
+            </div>
+
+            <div id="avisoMapa" class="aviso-mapa" role="status" aria-live="polite" hidden></div>
+        </div>
+    </header>
+
+    <aside id="sideMenu" class="sidebar">
+        <div class="sidebar-header">
+            <h2>MobiliTudo</h2>
+            <button class="close-btn" onclick="toggleMenu()" aria-label="Fechar menu">×</button>
+        </div>
+
+        <div id="placeDetails" class="menu-options" tabindex="0">
+            <p class="placeholder-text">Clique em um ponto no mapa para explorar a acessibilidade.</p>
+        </div>
+
+        <hr class="menu-divider">
+
+        <nav class="nav-menu">
+            <button class="nav-item" onclick="MobiliTudoRotas.abrirPainel(); fecharMenu();">
+                <span class="icon">🧭</span> Rota acessível
+            </button>
+
+            <button class="nav-item" onclick="MobiliTudoObstaculos.abrirFormulario(); fecharMenu();">
+                <span class="icon">🚧</span> Reportar barreira
+            </button>
+
+            <button class="nav-item" onclick="window.location.href='curadoria.html'">
+                <span class="icon">🛡️</span> Curadoria de obstáculos
+            </button>
+
+            <button class="nav-item" onclick="window.location.href='perfil.html'">
+                <span class="icon">👤</span> Perfil
+            </button>
+
+            <button class="nav-item" onclick="window.location.href='config.html'">
+                <span class="icon">⚙️</span> Configurações
+            </button>
+
+            <button class="nav-item" onclick="toggleSubMenu('acessibilidadeSub')">
+                <span class="icon">♿</span> Acessibilidade
+            </button>
+            <div id="acessibilidadeSub" class="sub-menu">
+                <button onclick="ativarLeitor()"><span class="icon">🔊</span> Leitor de Texto</button>
+                <button onclick="toggleContraste()"><span class="icon">🌗</span> Alto Contraste</button>
+                <button onclick="toggleFonteLegivel()"><span class="icon">🔤</span> Fonte Legível</button>
+                <button onclick="ativarVoz()"><span class="icon">🎤</span> Comando de Voz</button>
+            </div>
+
+            <button class="nav-item" onclick="window.location.href='sobre.html'">
+                <span class="icon">ℹ️</span> Sobre o Projeto
+            </button>
+        </nav>
+    </aside>
+
+    <main aria-label="Mapa de acessibilidade">
+    <div id="map"></div>
+
+    <span id="seloConexao" class="selo-conexao offline">Modo offline · acervo local</span>
+
+    <!-- Painel de rota acessível -->
+    <section id="painelRota" class="painel-inferior" aria-label="Cálculo de rota acessível">
+        <header class="painel-cabecalho">
+            <h3>🧭 Rota acessível</h3>
+            <button class="close-btn escuro" onclick="MobiliTudoRotas.fecharPainel()" aria-label="Fechar painel de rota">×</button>
+        </header>
+
+        <div class="painel-corpo">
+            <label class="campo">
+                <span>Perfil de mobilidade</span>
+                <select id="perfilRota">
+                    <option value="CADEIRA_DE_RODAS">Cadeira de rodas</option>
+                    <option value="MOBILIDADE_REDUZIDA">Mobilidade reduzida</option>
+                    <option value="DEFICIENCIA_VISUAL">Deficiência visual</option>
+                    <option value="PADRAO" selected>Sem restrições</option>
+                </select>
+            </label>
+
+            <div class="campo">
+                <span>Partida</span>
+                <p id="origemRota" class="valor-campo">não definida</p>
+                <div class="linha-botoes">
+                    <button onclick="MobiliTudoRotas.usarMinhaLocalizacaoComoOrigem()">🎯 Minha localização</button>
+                    <button onclick="MobiliTudoRotas.escolherOrigemNoMapa()">📌 Escolher no mapa</button>
+                </div>
+            </div>
+
+            <div class="campo">
+                <span>Destino</span>
+                <p id="destinoRota" class="valor-campo">escolha um local no mapa</p>
+            </div>
+
+            <button class="botao-primario" onclick="MobiliTudoRotas.calcular()">Calcular rota</button>
+            <p id="mensagemRota" class="mensagem-rota" role="status" aria-live="polite" hidden></p>
+            <div id="resultadoRota" hidden></div>
+        </div>
+    </section>
+
+    <!-- Painel de relato de barreira -->
+    <section id="painelObstaculo" class="painel-inferior" aria-label="Reportar barreira urbana">
+        <header class="painel-cabecalho">
+            <h3>🚧 Reportar barreira</h3>
+            <button class="close-btn escuro" onclick="MobiliTudoObstaculos.fecharFormulario()" aria-label="Fechar painel de relato">×</button>
+        </header>
+
+        <div class="painel-corpo">
+            <div class="campo">
+                <span>Local da barreira</span>
+                <p id="coordObstaculo" class="valor-campo">toque no mapa</p>
+            </div>
+
+            <label class="campo">
+                <span>Tipo</span>
+                <select id="tipoObstaculo">
+                    <option value="DEGRAU">Degrau sem rampa</option>
+                    <option value="SEM_REBAIXAMENTO_GUIA">Travessia sem rebaixamento de guia</option>
+                    <option value="BURACO">Buraco ou piso danificado</option>
+                    <option value="OBRA">Obra ou interdição na calçada</option>
+                    <option value="VEICULO_SOBRE_CALCADA">Veículo sobre a calçada</option>
+                    <option value="SEM_CALCADA">Trecho sem calçada</option>
+                </select>
+            </label>
+
+            <label class="campo">
+                <span>Gravidade</span>
+                <select id="severidadeObstaculo">
+                    <option value="LEVE">Leve - atrapalha</option>
+                    <option value="MODERADA" selected>Moderada - exige desvio</option>
+                    <option value="CRITICA">Crítica - impede a passagem</option>
+                </select>
+            </label>
+
+            <label class="campo">
+                <span>Descrição</span>
+                <textarea id="descricaoObstaculo" rows="3"
+                          placeholder="O que você encontrou nesse ponto?"></textarea>
+            </label>
+
+            <p id="avisoNomeRelato" class="mensagem-rota info" hidden></p>
+
+            <button class="botao-primario" onclick="MobiliTudoObstaculos.enviar()">Enviar relato</button>
+            <p id="mensagemObstaculo" class="mensagem-rota" role="status" aria-live="polite" hidden></p>
+        </div>
+    </section>
+
+    <div id="lightboxOverlay" class="lightbox-overlay" onclick="fecharLightbox(event)">
+        <div class="lightbox-container">
+            <button class="close-lightbox" onclick="fecharLightbox(event)" aria-label="Fechar imagem">×</button>
+            <img id="lightboxImg" src="" alt="Imagem expandida do local">
+        </div>
+    </div>
+
+    <button id="btn-geoloc" onclick="minhaLocalizacao()" title="Minha Localização" aria-label="Centralizar na minha localização">🎯</button>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/texto.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/mapa.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/meusRelatos.js"></script>
+    <script src="js/rotas.js"></script>
+    <script src="js/obstaculos.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

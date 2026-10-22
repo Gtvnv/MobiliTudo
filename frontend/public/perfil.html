@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>Perfil - MobiliTudo</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container-perfil { background: white; width: 90%; max-width: 450px; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        .profile-pic { width: 100px; height: 100px; border-radius: 50%; border: 3px solid #0056b3; margin-bottom: 15px; }
+        .btn-acao { display: block; width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 16px; }
+        .btn-primario { background: #0056b3; color: white; }
+        .btn-secundario { background: #eef4ff; color: #0056b3; border: 1px solid #0056b3; }
+        .input-campo { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn-voltar-link { display: inline-block; margin-top: 20px; color: #666; text-decoration: none; font-size: 14px; }
+        .btn-voltar-link:hover { color: #0056b3; }
+        .badge-pg { background: #eef4ff; color: #0056b3; padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: bold; }
+
+        .meus-relatos { text-align: left; margin-top: 20px; }
+        .meus-relatos h3 { font-size: 14px; color: #555; margin-bottom: 4px; }
+        .meus-relatos small { display: block; color: #595959; font-size: 11px; margin-bottom: 10px; line-height: 1.4; }
+        .item-relato {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 10px; padding: 10px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px;
+        }
+        .item-relato .descricao-relato { font-size: 13px; color: #333; }
+        .item-relato .descricao-relato small { color: #595959; }
+        .item-relato button {
+            flex-shrink: 0; padding: 6px 10px; border-radius: 6px; border: 1px solid #c62828;
+            background: white; color: #c62828; font-size: 11px; font-weight: bold; cursor: pointer;
+        }
+        .item-relato button:hover { background: #fdecec; }
+        .item-relato button:disabled { opacity: 0.5; cursor: default; }
+        .sem-relatos { font-size: 12px; color: #595959; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <main>
+        <h1 class="sr-only">Perfil do usuário</h1>
+        <div class="container-perfil" id="cardPrincipal"></div>
+    </main>
+
+    <script src="js/texto.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/meusRelatos.js"></script>
+    <script>
+        const card = document.getElementById("cardPrincipal");
+
+        function renderizar() {
+            const nome = localStorage.getItem("nomeUsuario");
+
+            if (!nome) {
+                // TELA INICIAL: LOGIN OU CADASTRO
+                card.innerHTML = `
+                    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" width="80" alt="" style="margin-bottom: 20px; opacity: 0.6;">
+                    <h2>Bem-vindo!</h2>
+                    <p style="color: #666;">Crie sua conta para salvar seus locais favoritos em Praia Grande.</p>
+                    <button class="btn-acao btn-primario" onclick="telaCadastro()">Cadastre-se</button>
+                    <button class="btn-acao btn-secundario" onclick="telaLogin()">Já tenho conta</button>
+                    <a href="index.html" class="btn-voltar-link">Voltar ao Mapa</a>
+                `;
+            } else {
+                // TELA DE PERFIL PRONTO
+                //
+                // nome vem de localStorage, validado por regex só do lado do cliente
+                // (apenas-letras, em salvar()) — alguém editando localStorage direto
+                // pelo devtools contorna essa validação. Escapar aqui é defesa em
+                // profundidade contra esse self-XSS, e encodeURIComponent evita que um
+                // nome com espaço ou acento quebre a query string da URL do avatar.
+                const pcd = localStorage.getItem("tipoMobilidade") || "Não informado";
+                const nomeSeguro = MobiliTudoTexto.escapar(nome);
+                card.innerHTML = `
+                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(nome)}&background=0056b3&color=fff" class="profile-pic" alt="Foto de perfil de ${nomeSeguro}">
+                    <h2 style="margin: 5px 0;">${nomeSeguro}</h2>
+                    <span class="badge-pg">Mapeadora - Praia Grande</span>
+
+                    <div style="text-align: left; margin-top: 25px; padding: 15px; background: #f9f9f9; border-radius: 10px;">
+                        <p><strong>♿ Acessibilidade:</strong> ${MobiliTudoTexto.escapar(pcd)}</p>
+                        <p><strong>⭐ Salvos:</strong> Litoral Plaza, Palácio das Artes</p>
+                    </div>
+
+                    <div class="meus-relatos" id="secaoMeusRelatos"></div>
+
+                    <button class="btn-acao btn-secundario" style="margin-top: 20px;" onclick="window.location.href='index.html'">Acessar Mapa</button>
+                    <button onclick="sair()" style="background:none; border:none; color:red; cursor:pointer; margin-top:15px; font-size:13px;">Sair da conta</button>
+                `;
+                renderizarMeusRelatos();
+            }
+        }
+
+        /**
+         * Lista os obstáculos reportados deste navegador (ver js/meusRelatos.js), cada
+         * um com a opção de remover o próprio nome — autoexclusão de dado pessoal sem
+         * exigir conta, só a posse do token guardado localmente no momento do relato.
+         */
+        function renderizarMeusRelatos() {
+            const secao = document.getElementById("secaoMeusRelatos");
+            if (!secao) {
+                return;
+            }
+            const relatos = MobiliTudoMeusRelatos.listar();
+
+            if (relatos.length === 0) {
+                secao.innerHTML = `
+                    <h3>📍 Meus relatos</h3>
+                    <p class="sem-relatos">Nenhum obstáculo reportado neste navegador ainda.</p>
+                `;
+                return;
+            }
+
+            const itens = relatos.map(r => `
+                <div class="item-relato" data-id="${MobiliTudoTexto.escapar(r.id)}">
+                    <span class="descricao-relato">
+                        ${MobiliTudoTexto.escapar(r.tipoDescricao || "Obstáculo")}<br>
+                        <small>${new Date(r.criadoEm).toLocaleDateString("pt-BR")}</small>
+                    </span>
+                    <button onclick="removerMeuNomeDoRelato('${MobiliTudoTexto.escapar(r.id)}')">Remover meu nome</button>
+                </div>
+            `).join("");
+
+            secao.innerHTML = `
+                <h3>📍 Meus relatos</h3>
+                <small>Lembrado só neste navegador. Remover seu nome não apaga o relato — a barreira
+                reportada continua ajudando outras pessoas, só deixa de estar associada a você.</small>
+                ${itens}
+            `;
+        }
+
+        function removerMeuNomeDoRelato(obstaculoId) {
+            const relato = MobiliTudoMeusRelatos.listar().find(r => r.id === obstaculoId);
+            if (!relato) {
+                return;
+            }
+            const botao = document.querySelector(`.item-relato[data-id="${CSS.escape(obstaculoId)}"] button`);
+            if (botao) {
+                botao.disabled = true;
+                botao.textContent = "Removendo…";
+            }
+
+            MobiliTudoApi.anonimizarObstaculo(relato.id, relato.tokenExclusao)
+                .then(() => {
+                    MobiliTudoMeusRelatos.remover(obstaculoId);
+                    renderizarMeusRelatos();
+                })
+                .catch(erro => {
+                    // 403 significa token incorreto, já usado, ou relato sem token — em
+                    // qualquer um desses casos tentar de novo não vai funcionar, então
+                    // o item some da lista local mesmo sem sucesso no servidor.
+                    if (erro.status === 403) {
+                        MobiliTudoMeusRelatos.remover(obstaculoId);
+                        alert("Este token de exclusão não é mais válido (provavelmente já foi usado antes).");
+                    } else {
+                        alert("Não foi possível remover agora: " + erro.message + ". Tente de novo mais tarde.");
+                    }
+                    renderizarMeusRelatos();
+                });
+        }
+
+        function telaCadastro() {
+            card.innerHTML = `
+                <h2>Criar Conta</h2>
+                <input type="text" id="nomeIn" class="input-campo" placeholder="Nome Completo">
+                <label for="perfilIn" style="display:block;text-align:left;font-size:13px;color:#666;margin-bottom:6px;">Como você se desloca</label>
+                <select id="perfilIn" class="input-campo">
+                    <option value="CADEIRA_DE_RODAS">Cadeira de rodas</option>
+                    <option value="MOBILIDADE_REDUZIDA">Mobilidade reduzida</option>
+                    <option value="DEFICIENCIA_VISUAL">Deficiência visual</option>
+                    <option value="PADRAO">Sem restrições</option>
+                </select>
+                <button class="btn-acao btn-primario" onclick="salvar('cadastro')">Finalizar Cadastro</button>
+                <button class="btn-voltar-link" style="border:none; background:none; cursor:pointer;" onclick="renderizar()">← Voltar</button>
+            `;
+        }
+
+        function telaLogin() {
+            card.innerHTML = `
+                <h2>Entrar</h2>
+                <input type="text" id="nomeIn" class="input-campo" placeholder="Digite seu nome">
+                <button class="btn-acao btn-primario" onclick="salvar('login')">Entrar agora</button>
+                <button class="btn-voltar-link" style="border:none; background:none; cursor:pointer;" onclick="renderizar()">← Voltar</button>
+            `;
+        }
+
+     function salvar(tipo) {
+    const nome = document.getElementById("nomeIn").value;
+    // Esta linha mágica verifica se tem APENAS letras (maiúsculas, minúsculas e com acento) e espaços
+    const apenasLetras = /^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$/;
+
+    if (!nome) {
+        return alert("Por favor, digite seu nome!");
+    }
+
+    // Validação do Nome
+    if (!apenasLetras.test(nome)) {
+        return alert("Erro: O campo Nome deve conter apenas letras!");
+    }
+
+    localStorage.setItem("nomeUsuario", nome);
+
+    // O perfil vem de uma lista fechada, então não há o que validar: o que precisa
+    // ser gravado é o identificador que o cálculo de rota entende.
+    if (tipo === 'cadastro') {
+        const perfil = document.getElementById("perfilIn");
+        localStorage.setItem(MobiliTudoConfig.chavePerfil, perfil.value);
+        localStorage.setItem("tipoMobilidade", perfil.options[perfil.selectedIndex].text);
+    }
+
+    renderizar();
+}
+        function sair() {
+            localStorage.removeItem("nomeUsuario");
+            localStorage.removeItem("tipoMobilidade");
+            localStorage.removeItem(MobiliTudoConfig.chavePerfil);
+            renderizar();
+        }
+
+        renderizar(); // Inicia a página
+    </script>
+</body>
+</html>

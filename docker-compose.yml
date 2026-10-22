@@ -1,0 +1,71 @@
+# Sobe o MobiliTudo inteiro: banco espacial, API e o mapa servido por HTTP.
+#
+# Servir o front por HTTP (e nao abrir o index.html pelo disco) e parte da correcao do
+# erro 403 do OpenStreetMap: so assim o navegador envia o cabecalho Referer que a
+# politica de uso dos tiles exige. Ver docs/mapa-tiles.md.
+#
+#   docker compose up --build
+#   mapa .......... http://localhost:8081
+#   API ........... http://localhost:8080
+#   documentacao .. http://localhost:8080/docs
+
+services:
+  banco:
+    image: postgis/postgis:16-3.4
+    container_name: mobilitudo-banco
+    environment:
+      POSTGRES_DB: mobilitudo
+      POSTGRES_USER: mobilitudo
+      POSTGRES_PASSWORD: mobilitudo
+    ports:
+      - "5432:5432"
+    volumes:
+      - dados-postgis:/var/lib/postgresql/data
+    healthcheck:
+      # -h 127.0.0.1 forca a checagem por TCP. Sem isso, o pg_isready responde pelo
+      # socket unix que a imagem usa durante a inicializacao interna, e a API sobe
+      # antes de o servidor aceitar conexoes de rede.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U mobilitudo -d mobilitudo"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+  api:
+    build:
+      context: ./backend
+    container_name: mobilitudo-api
+    restart: on-failure
+    depends_on:
+      banco:
+        condition: service_healthy
+    environment:
+      MOBILITUDO_DB_URL: jdbc:postgresql://banco:5432/mobilitudo
+      MOBILITUDO_DB_USER: mobilitudo
+      MOBILITUDO_DB_PASSWORD: mobilitudo
+      MOBILITUDO_CORS_ORIGENS: "http://localhost:8081,http://127.0.0.1:8081"
+      # Cria a primeira conta de curador no boot, se não houver nenhuma ainda (ver
+      # BootstrapDoPrimeiroCurador) — depois disso, novas contas se cadastram logadas,
+      # pela própria API. Estes valores servem só para subir o projeto localmente —
+      # troque-os (ou melhor, defina-os via variável de ambiente do host, sem editar
+      # este arquivo) antes de publicar a API em qualquer lugar acessível pela rede.
+      MOBILITUDO_CURADOR_INICIAL_EMAIL: ${MOBILITUDO_CURADOR_INICIAL_EMAIL:-curadoria@mobilitudo.local}
+      MOBILITUDO_CURADOR_INICIAL_SENHA: ${MOBILITUDO_CURADOR_INICIAL_SENHA:-dev-apenas-nao-use-em-producao}
+    ports:
+      - "8080:8080"
+
+  mapa:
+    image: nginx:1.27-alpine
+    container_name: mobilitudo-mapa
+    depends_on:
+      - api
+    ports:
+      - "8081:80"
+    volumes:
+      # frontend/public/ é só o site estático servível; package.json, testes e
+      # node_modules ficam em frontend/ (fora deste mount) de propósito, para não
+      # publicar tooling de desenvolvimento como parte do site.
+      - ./frontend/public:/usr/share/nginx/html:ro
+
+volumes:
+  dados-postgis:

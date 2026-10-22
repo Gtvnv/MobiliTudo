@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>Curadoria - MobiliTudo</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #f4f6f9; color: #333; overflow-y: auto; }
+        .curadoria-container { max-width: 800px; margin: 40px auto; padding: 20px; }
+
+        .curadoria-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .curadoria-header h1 { margin: 0; font-size: 24px; color: #0056b3; }
+
+        .card-token {
+            background: white; border-radius: 15px; padding: 20px 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 25px;
+        }
+        .card-token label { display: block; font-weight: bold; font-size: 14px; margin-bottom: 6px; }
+        .card-token small { display: block; color: #595959; font-size: 12px; margin-bottom: 10px; line-height: 1.5; }
+        .linha-token { display: flex; gap: 10px; flex-wrap: wrap; }
+        .linha-token input {
+            flex: 1; min-width: 160px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;
+        }
+        .linha-token button {
+            padding: 10px 18px; border: none; border-radius: 8px; background: #0056b3; color: white;
+            font-weight: bold; cursor: pointer;
+        }
+        .status-token { margin-top: 10px; font-size: 13px; }
+        .status-token.ok { color: #14612c; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .status-token.ausente { color: #a86400; }
+        .status-token .btn-sair {
+            padding: 4px 10px; border-radius: 6px; border: 1px solid #a01d1d; color: #a01d1d;
+            background: white; font-size: 12px; cursor: pointer;
+        }
+
+        .abas { display: flex; gap: 8px; margin-bottom: 15px; }
+        .aba {
+            padding: 8px 16px; border-radius: 20px; border: 1px solid #ddd; background: white;
+            font-size: 13px; cursor: pointer; font-weight: bold; color: #555;
+        }
+        .aba.ativa { background: #0056b3; color: white; border-color: #0056b3; }
+
+        .lista-obstaculos { display: flex; flex-direction: column; gap: 14px; }
+        .item-obstaculo {
+            background: white; border-radius: 12px; padding: 18px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 5px solid #d98200;
+        }
+        .item-obstaculo.severidade-critica { border-left-color: #c62828; }
+        .item-obstaculo.severidade-leve { border-left-color: #999; }
+
+        .item-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+        .item-topo h2 { margin: 0; font-size: 16px; }
+        .item-meta { font-size: 12px; color: #595959; }
+        .item-descricao { margin: 8px 0; font-size: 14px; color: #555; }
+        .item-coords { font-size: 12px; color: #595959; font-family: monospace; }
+
+        .item-acoes { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .item-acoes button {
+            padding: 8px 14px; border-radius: 8px; border: 1px solid #ddd; background: white;
+            font-size: 13px; font-weight: bold; cursor: pointer;
+        }
+        .btn-validar { color: #14612c; border-color: #14612c !important; }
+        .btn-validar:hover { background: #e8f6ec; }
+        .btn-rejeitar { color: #a01d1d; border-color: #a01d1d !important; }
+        .btn-rejeitar:hover { background: #fdecec; }
+        .btn-resolver { color: #0056b3; border-color: #0056b3 !important; }
+        .btn-resolver:hover { background: #eef4ff; }
+
+        .vazio { text-align: center; color: #595959; padding: 40px 20px; font-style: italic; }
+        .back-link { display: inline-block; margin-top: 25px; color: #666; text-decoration: none; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <main class="curadoria-container">
+        <div class="curadoria-header">
+            <a href="index.html" style="text-decoration: none; font-size: 24px;" aria-label="Voltar ao mapa">⬅️</a>
+            <h1>Curadoria de obstáculos</h1>
+        </div>
+
+        <div class="card-token">
+            <label for="campoEmail">Login de curador</label>
+            <small>
+                Exigido pela API para validar, rejeitar ou resolver um relato — sem uma conta, qualquer
+                pessoa poderia inventar uma barreira e desviar a rota de outra pessoa. A sessão fica só
+                nesta aba (sessionStorage): feche-a para encerrá-la, ou use Sair.
+            </small>
+            <div class="linha-token" id="formularioLogin">
+                <input type="email" id="campoEmail" placeholder="E-mail">
+                <input type="password" id="campoSenha" placeholder="Senha">
+                <button onclick="entrar()">Entrar</button>
+            </div>
+            <p id="statusToken" class="status-token"></p>
+        </div>
+
+        <div class="abas">
+            <button class="aba ativa" data-status="PENDENTE" onclick="mudarAba('PENDENTE')">Pendentes</button>
+            <button class="aba" data-status="VALIDADO" onclick="mudarAba('VALIDADO')">Validados</button>
+            <button class="aba" data-status="REJEITADO" onclick="mudarAba('REJEITADO')">Rejeitados</button>
+            <button class="aba" data-status="RESOLVIDO" onclick="mudarAba('RESOLVIDO')">Resolvidos</button>
+        </div>
+
+        <div id="listaObstaculos" class="lista-obstaculos">
+            <p class="vazio">Carregando…</p>
+        </div>
+
+        <a href="index.html" class="back-link">Voltar ao mapa</a>
+    </main>
+
+    <script src="js/texto.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        var abaAtual = 'PENDENTE';
+
+        var ACOES_POR_ABA = {
+            PENDENTE: [
+                { acao: 'VALIDAR', rotulo: '✓ Validar', classe: 'btn-validar' },
+                { acao: 'REJEITAR', rotulo: '✗ Rejeitar', classe: 'btn-rejeitar' }
+            ],
+            VALIDADO: [
+                { acao: 'RESOLVER', rotulo: '✓ Marcar como resolvido', classe: 'btn-resolver' }
+            ],
+            REJEITADO: [],
+            RESOLVIDO: []
+        };
+
+        function statusElemento() {
+            return document.getElementById('statusToken');
+        }
+
+        function atualizarStatusToken() {
+            var token = MobiliTudoConfig.tokenDeSessao();
+            var email = MobiliTudoConfig.emailDoCurador();
+            var el = statusElemento();
+            var formulario = document.getElementById('formularioLogin');
+            if (token) {
+                el.innerHTML = 'Conectado como ' + escapar(email || '') + '.'
+                    + ' <button class="btn-sair" onclick="sair()">Sair</button>';
+                el.className = 'status-token ok';
+                formulario.style.display = 'none';
+            } else {
+                el.textContent = 'Sem login: validar, rejeitar ou resolver vai falhar com 401.';
+                el.className = 'status-token ausente';
+                formulario.style.display = 'flex';
+            }
+        }
+
+        function entrar() {
+            var email = document.getElementById('campoEmail').value.trim();
+            var senha = document.getElementById('campoSenha').value;
+            MobiliTudoApi.loginCurador(email, senha)
+                .then(function (resultado) {
+                    MobiliTudoConfig.definirSessaoCurador(resultado.token, resultado.curador.email);
+                    document.getElementById('campoEmail').value = '';
+                    document.getElementById('campoSenha').value = '';
+                    atualizarStatusToken();
+                    carregarLista();
+                })
+                .catch(function (erro) {
+                    alert(mensagemDeErro(erro));
+                });
+        }
+
+        function sair() {
+            var token = MobiliTudoConfig.tokenDeSessao();
+            MobiliTudoApi.logoutCurador(token).catch(function () {
+                /* mesmo se o logout no servidor falhar, a sessão local é encerrada abaixo */
+            }).then(function () {
+                MobiliTudoConfig.limparSessaoCurador();
+                atualizarStatusToken();
+                carregarLista();
+            });
+        }
+
+        function mudarAba(status) {
+            abaAtual = status;
+            document.querySelectorAll('.aba').forEach(function (botao) {
+                botao.classList.toggle('ativa', botao.dataset.status === status);
+            });
+            carregarLista();
+        }
+
+        // Escape de HTML: ver js/texto.js. Alias local para não reescrever cada chamada.
+        var escapar = MobiliTudoTexto.escapar;
+
+        function formatarData(iso) {
+            try {
+                return new Date(iso).toLocaleString('pt-BR');
+            } catch (erro) {
+                return iso;
+            }
+        }
+
+        function renderizarItem(obstaculo) {
+            var acoes = (ACOES_POR_ABA[obstaculo.status] || []).map(function (a) {
+                return '<button class="' + a.classe + '" onclick="aplicarAcao(\'' + obstaculo.id + '\', \'' + a.acao + '\')">'
+                    + a.rotulo + '</button>';
+            }).join('');
+
+            return '<div class="item-obstaculo severidade-' + obstaculo.severidade.toLowerCase() + '">'
+                + '<div class="item-topo">'
+                + '<h2>' + escapar(obstaculo.tipoDescricao) + '</h2>'
+                + '<span class="item-meta">reportado por ' + escapar(obstaculo.reportadoPor) + ' em '
+                + formatarData(obstaculo.reportadoEm)
+                + (obstaculo.avaliadoPorEmail ? ' · avaliado por ' + escapar(obstaculo.avaliadoPorEmail) : '')
+                + '</span>'
+                + '</div>'
+                + (obstaculo.descricao ? '<p class="item-descricao">' + escapar(obstaculo.descricao) + '</p>' : '')
+                + '<p class="item-coords">' + obstaculo.coords[0].toFixed(5) + ', ' + obstaculo.coords[1].toFixed(5)
+                + (obstaculo.segmentoViaId ? ' · trecho ' + escapar(obstaculo.segmentoViaId) : '') + '</p>'
+                + (acoes ? '<div class="item-acoes">' + acoes + '</div>' : '')
+                + '</div>';
+        }
+
+        function carregarLista() {
+            var container = document.getElementById('listaObstaculos');
+            if (!MobiliTudoApi.configurada()) {
+                container.innerHTML = '<p class="vazio">Configure o endereço da API em Configurações para usar a curadoria.</p>';
+                return;
+            }
+            container.innerHTML = '<p class="vazio">Carregando…</p>';
+
+            MobiliTudoApi.listarObstaculosPorStatus(abaAtual)
+                .then(function (obstaculos) {
+                    if (!obstaculos.length) {
+                        container.innerHTML = '<p class="vazio">Nenhum obstáculo neste status.</p>';
+                        return;
+                    }
+                    container.innerHTML = obstaculos.map(renderizarItem).join('');
+                })
+                .catch(function (erro) {
+                    container.innerHTML = '<p class="vazio">Não foi possível carregar: ' + escapar(erro.message) + '</p>';
+                });
+        }
+
+        function aplicarAcao(id, acao) {
+            var token = MobiliTudoConfig.tokenDeSessao();
+            MobiliTudoApi.avaliarObstaculo(id, acao, token)
+                .then(function () {
+                    carregarLista();
+                })
+                .catch(function (erro) {
+                    alert(mensagemDeErro(erro));
+                    if (erro.status === 401) {
+                        MobiliTudoConfig.limparSessaoCurador();
+                        atualizarStatusToken();
+                    }
+                    carregarLista();
+                });
+        }
+
+        var MENSAGENS_POR_STATUS = {
+            401: 'Sessão de curador ausente, expirada ou inválida — faça login de novo.',
+            429: 'Muitas tentativas em pouco tempo. Aguarde e tente novamente.',
+            409: 'Este obstáculo já não está mais pendente — alguém mais rápido chegou primeiro.'
+        };
+
+        function mensagemDeErro(erro) {
+            return MENSAGENS_POR_STATUS[erro.status] || erro.message;
+        }
+
+        window.addEventListener('load', function () {
+            atualizarStatusToken();
+            carregarLista();
+        });
+    </script>
+</body>
+</html>

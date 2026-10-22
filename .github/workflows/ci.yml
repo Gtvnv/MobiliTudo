@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend (testes de domínio e integração)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+
+      - name: Testes de domínio
+        working-directory: backend
+        run: mvn -B test
+
+      # O runner do GitHub já traz Docker, então os testes contra PostGIS real
+      # cabem no CI e cobrem migrações, colunas geometry e consultas espaciais.
+      - name: Testes de integração (PostGIS via Testcontainers)
+        working-directory: backend
+        run: mvn -B verify -DskipITs=false
+
+      - name: Publicar relatórios em caso de falha
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorios-de-teste
+          path: |
+            backend/target/surefire-reports/
+            backend/target/failsafe-reports/
+
+  frontend:
+    name: Frontend (js/*.js via vitest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependências
+        working-directory: frontend
+        run: npm ci
+
+      - name: Testes de js/*.js (config, api, escape de HTML)
+        working-directory: frontend
+        run: npm test
